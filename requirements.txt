@@ -1,0 +1,40 @@
+# FastAPI and Server
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+python-multipart==0.0.9
+
+# Database
+SQLAlchemy==2.0.23
+psycopg2-binary==2.9.10
+alembic==1.13.1
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-dotenv==1.1.1
+pydantic==2.11.7
+pydantic-settings==2.1.0
+
+# Third-party Integrations
+twilio==8.11.1
+sendgrid==6.11.0
+google-auth==2.25.2
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+
+# HTTP Requests
+httpx==0.26.0
+requests==2.32.4
+
+# Utilities
+python-dateutil==2.9.0.post0
+email-validator==2.1.0
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+httpx==0.26.0
+
+# Rate Limiting
+slowapi==0.1.9

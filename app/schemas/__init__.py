@@ -1,0 +1,58 @@
+"""
+Import all schemas
+"""
+from app.schemas.user import (
+    UserBase,
+    UserCreate,
+    UserUpdate,
+    UserResponse,
+    UserWithAuthMethods,
+)
+from app.schemas.auth import (
+    Token,
+    TokenRefresh,
+    TokenData,
+    TelegramAuthRequest,
+    TelegramAuthResponse,
+    PhoneSendCodeRequest,
+    PhoneVerifyCodeRequest,
+    PhoneAuthResponse,
+    CodeSentResponse,
+    EmailSendCodeRequest,
+    EmailVerifyCodeRequest,
+    EmailAuthResponse,
+    GoogleAuthResponse,
+    AuthMethodBase,
+    AuthMethodCreate,
+    AuthMethodResponse,
+    AuthMethodUpdate,
+    LinkAccountRequest,
+    MessageResponse,
+)
+
+__all__ = [
+    "UserBase",
+    "UserCreate",
+    "UserUpdate",
+    "UserResponse",
+    "UserWithAuthMethods",
+    "Token",
+    "TokenRefresh",
+    "TokenData",
+    "TelegramAuthRequest",
+    "TelegramAuthResponse",
+    "PhoneSendCodeRequest",
+    "PhoneVerifyCodeRequest",
+    "PhoneAuthResponse",
+    "CodeSentResponse",
+    "EmailSendCodeRequest",
+    "EmailVerifyCodeRequest",
+    "EmailAuthResponse",
+    "GoogleAuthResponse",
+    "AuthMethodBase",
+    "AuthMethodCreate",
+    "AuthMethodResponse",
+    "AuthMethodUpdate",
+    "LinkAccountRequest",
+    "MessageResponse",
+]
