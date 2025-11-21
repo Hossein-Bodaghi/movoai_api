@@ -3,7 +3,14 @@ Authentication endpoints - Telegram, SMS, Email, Google OAuth
 """
 from datetime import datetime, timedelta
 from typing import Dict
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+import secrets
+import hashlib
+import hmac
+import json
+import urllib.parse
+import string
+import random
+from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
@@ -23,6 +30,9 @@ from app.models.verification_code import VerificationCode
 from app.schemas.auth import (
     TelegramAuthRequest,
     TelegramAuthResponse,
+    TelegramAutoLogin,
+    TelegramTokenRequest,
+    TelegramTokenVerify,
     PhoneSendCodeRequest,
     PhoneVerifyCodeRequest,
     PhoneAuthResponse,
@@ -52,8 +62,10 @@ def create_user_with_auth_method(
 ) -> User:
     """Helper function to create user with auth method"""
     # Create user
+    referral_code = generate_referral_code(db)
     user = User(
         telegram_id=None,  # Will be set if auth_provider is telegram
+        referral_code=referral_code,
         **user_data.model_dump()
     )
     db.add(user)
@@ -119,6 +131,81 @@ def generate_tokens(user_id: int) -> Dict[str, str]:
         "refresh_token": refresh_token,
         "token_type": "bearer"
     }
+
+
+def generate_referral_code(db: Session, length: int = 8) -> str:
+    """Generate a unique referral code"""
+    characters = string.ascii_uppercase + string.digits
+    while True:
+        code = ''.join(random.choices(characters, k=length))
+        # Check if code already exists
+        existing = db.query(User).filter(User.referral_code == code).first()
+        if not existing:
+            return code
+
+
+def validate_telegram_webapp_data(init_data: str, bot_token: str) -> bool:
+    """
+    Validates Telegram WebApp initData using HMAC-SHA256.
+    https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
+    """
+    try:
+        # Parse init_data
+        params = dict(param.split('=', 1) for param in init_data.split('&'))
+        
+        if 'hash' not in params:
+            return False
+        
+        received_hash = params.pop('hash')
+        
+        # Create data-check-string
+        data_check_string = '\n'.join(f"{k}={v}" for k, v in sorted(params.items()))
+        
+        # Calculate hash
+        secret_key = hmac.new("WebAppData".encode(), bot_token.encode(), hashlib.sha256).digest()
+        calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+        
+        return calculated_hash == received_hash
+    except Exception:
+        return False
+
+
+def parse_telegram_init_data(init_data: str) -> dict:
+    """Parse Telegram WebApp initData and extract user info."""
+    try:
+        params = dict(param.split('=', 1) for param in init_data.split('&'))
+        
+        if 'user' in params:
+            user_json = urllib.parse.unquote(params['user'])
+            return json.loads(user_json)
+        
+        return {}
+    except Exception:
+        return {}
+
+
+async def send_telegram_message(chat_id: int, text: str, reply_markup: dict = None):
+    """Helper function to send messages via Telegram Bot API"""
+    import httpx
+    
+    url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
+    
+    payload = {
+        "chat_id": chat_id,
+        "text": text,
+        "parse_mode": "Markdown"
+    }
+    
+    if reply_markup:
+        payload["reply_markup"] = reply_markup
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload)
+            return response.status_code == 200
+    except Exception as e:
+        print(f"Error sending Telegram message: {e}")
+        return False
 
 
 # =============== Telegram Authentication ===============
@@ -228,6 +315,319 @@ async def telegram_link(
     db.commit()
     
     return MessageResponse(message="Telegram account linked successfully")
+
+
+@router.post("/telegram/auto-login", response_model=TelegramAuthResponse)
+async def telegram_auto_login(
+    request: TelegramAutoLogin,
+    db: Session = Depends(get_db)
+):
+    """
+    Automatic login when user opens web app from Telegram (Mini App).
+    Validates Telegram WebApp initData to ensure authenticity.
+    """
+    # Validate Telegram WebApp data
+    if not validate_telegram_webapp_data(request.init_data, settings.TELEGRAM_BOT_TOKEN):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Telegram authentication"
+        )
+    
+    # Parse init_data to get user info
+    user_data_dict = parse_telegram_init_data(request.init_data)
+    if not user_data_dict:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not parse Telegram user data"
+        )
+    
+    telegram_id = str(user_data_dict.get("id"))
+    username = user_data_dict.get("username")
+    first_name = user_data_dict.get("first_name", "")
+    last_name = user_data_dict.get("last_name", "")
+    
+    # Get or create user
+    user = db.query(User).filter(User.telegram_id == telegram_id).first()
+    is_new = False
+    
+    if not user:
+        # Create new user (profile will be completed later)
+        referral_code = generate_referral_code(db)
+        user = User(
+            telegram_id=int(telegram_id),
+            referral_code=referral_code,
+            is_active=True
+        )
+        db.add(user)
+        db.flush()
+        
+        # Create auth method
+        auth_method = UserAuthMethod(
+            user_id=user.user_id,
+            auth_provider="telegram",
+            auth_identifier=telegram_id,
+            auth_data={
+                "username": username,
+                "first_name": first_name,
+                "last_name": last_name
+            },
+            is_verified=True,
+            is_primary=True
+        )
+        db.add(auth_method)
+        db.commit()
+        db.refresh(user)
+        is_new = True
+    
+    # Generate JWT tokens
+    tokens = generate_tokens(user.user_id)
+    
+    return TelegramAuthResponse(
+        user=UserResponse.model_validate(user),
+        is_new_user=is_new,
+        **tokens
+    )
+
+
+@router.post("/telegram/request-token")
+async def telegram_request_token(
+    request: TelegramTokenRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Called by Telegram bot when user sends /login command.
+    Generates a short-lived token that user can use on web.
+    """
+    telegram_id = request.telegram_id
+    
+    # Check if user exists, create if not
+    user = db.query(User).filter(User.telegram_id == telegram_id).first()
+    if not user:
+        referral_code = generate_referral_code(db)
+        user = User(
+            telegram_id=int(telegram_id),
+            referral_code=referral_code,
+            is_active=True
+        )
+        db.add(user)
+        db.flush()
+        
+        # Create auth method
+        auth_method = UserAuthMethod(
+            user_id=user.user_id,
+            auth_provider="telegram",
+            auth_identifier=telegram_id,
+            auth_data={
+                "username": request.username,
+                "first_name": request.first_name
+            },
+            is_verified=True,
+            is_primary=True
+        )
+        db.add(auth_method)
+        db.commit()
+    
+    # Generate random 6-character token
+    login_token = secrets.token_urlsafe(6)[:6].upper()
+    
+    # Store in verification_code table
+    verification = VerificationCode(
+        identifier=telegram_id,
+        code=login_token,
+        code_type="telegram",
+        expires_at=datetime.utcnow() + timedelta(minutes=5)
+    )
+    db.add(verification)
+    db.commit()
+    
+    return {
+        "token": login_token,
+        "expires_in": 300  # 5 minutes
+    }
+
+
+@router.post("/telegram/verify-token", response_model=TelegramAuthResponse)
+async def telegram_verify_token(
+    request: TelegramTokenVerify,
+    db: Session = Depends(get_db)
+):
+    """
+    Web app calls this endpoint with the token from Telegram.
+    Returns JWT tokens if valid.
+    """
+    # Find valid verification code
+    verification = db.query(VerificationCode).filter(
+        and_(
+            VerificationCode.code == request.token.upper(),
+            VerificationCode.code_type == "telegram",
+            VerificationCode.verified == False,
+            VerificationCode.expires_at > datetime.utcnow()
+        )
+    ).order_by(VerificationCode.created_at.desc()).first()
+    
+    if not verification:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired token"
+        )
+    
+    # Check attempts
+    if verification.attempts >= settings.MAX_CODE_ATTEMPTS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Too many attempts"
+        )
+    
+    verification.attempts += 1
+    db.commit()
+    
+    # Get user by telegram_id
+    telegram_id = verification.identifier
+    user = db.query(User).filter(User.telegram_id == telegram_id).first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Mark token as used
+    verification.verified = True
+    db.commit()
+    
+    # Generate JWT tokens
+    tokens = generate_tokens(user.user_id)
+    
+    return TelegramAuthResponse(
+        user=UserResponse.model_validate(user),
+        is_new_user=False,
+        **tokens
+    )
+
+
+@router.post("/telegram/webhook")
+async def telegram_webhook(
+    update: dict,
+    db: Session = Depends(get_db)
+):
+    """
+    Webhook for Telegram bot to receive messages.
+    Handles user registration and token requests.
+    """
+    try:
+        if "message" not in update:
+            return {"ok": True}
+        
+        message = update["message"]
+        telegram_user = message.get("from", {})
+        text = message.get("text", "")
+        chat_id = message.get("chat", {}).get("id")
+        
+        telegram_id = str(telegram_user.get("id"))
+        username = telegram_user.get("username")
+        first_name = telegram_user.get("first_name", "User")
+        
+        # Handle /start command - register user
+        if text.startswith("/start"):
+            user = db.query(User).filter(User.telegram_id == telegram_id).first()
+            
+            if not user:
+                referral_code = generate_referral_code(db)
+                user = User(
+                    telegram_id=int(telegram_id),
+                    referral_code=referral_code,
+                    is_active=True
+                )
+                db.add(user)
+                db.flush()
+                
+                # Create auth method
+                auth_method = UserAuthMethod(
+                    user_id=user.user_id,
+                    auth_provider="telegram",
+                    auth_identifier=telegram_id,
+                    auth_data={
+                        "username": username,
+                        "first_name": first_name
+                    },
+                    is_verified=True,
+                    is_primary=True
+                )
+                db.add(auth_method)
+                db.commit()
+            
+            # Send welcome message with web app button
+            await send_telegram_message(
+                chat_id,
+                f"Welcome {first_name}! 🎉\n\n"
+                f"Choose how to access MovoAI:\n"
+                f"• Tap the button below to open the app directly\n"
+                f"• Or use /login to get a token for web browser",
+                reply_markup={
+                    "inline_keyboard": [[
+                        {
+                            "text": "Open MovoAI App",
+                            "web_app": {"url": f"{settings.FRONTEND_URL}"}
+                        }
+                    ]]
+                }
+            )
+        
+        # Handle /login command - generate token
+        elif text.startswith("/login"):
+            user = db.query(User).filter(User.telegram_id == telegram_id).first()
+            
+            if not user:
+                referral_code = generate_referral_code(db)
+                user = User(
+                    telegram_id=int(telegram_id),
+                    referral_code=referral_code,
+                    is_active=True
+                )
+                db.add(user)
+                db.flush()
+                
+                # Create auth method
+                auth_method = UserAuthMethod(
+                    user_id=user.user_id,
+                    auth_provider="telegram",
+                    auth_identifier=telegram_id,
+                    auth_data={
+                        "username": username,
+                        "first_name": first_name
+                    },
+                    is_verified=True,
+                    is_primary=True
+                )
+                db.add(auth_method)
+                db.commit()
+            
+            # Generate token
+            login_token = secrets.token_urlsafe(6)[:6].upper()
+            
+            verification = VerificationCode(
+                identifier=telegram_id,
+                code=login_token,
+                code_type="telegram",
+                expires_at=datetime.utcnow() + timedelta(minutes=5)
+            )
+            db.add(verification)
+            db.commit()
+            
+            # Send token to user
+            await send_telegram_message(
+                chat_id,
+                f"🔐 Your login token:\n\n"
+                f"`{login_token}`\n\n"
+                f"Enter this on {settings.FRONTEND_URL} within 5 minutes.\n"
+                f"This token can only be used once."
+            )
+        
+        return {"ok": True}
+        
+    except Exception as e:
+        print(f"Webhook error: {e}")
+        return {"ok": False}
 
 
 # =============== Phone/SMS Authentication ===============

@@ -36,6 +36,23 @@ class TelegramAuthRequest(BaseModel):
     hash: str
 
 
+class TelegramAutoLogin(BaseModel):
+    """Telegram automatic login from Mini App"""
+    init_data: str = Field(..., description="Telegram WebApp initData string")
+
+
+class TelegramTokenRequest(BaseModel):
+    """Request to generate login token via Telegram bot"""
+    telegram_id: str = Field(..., description="Telegram user ID")
+    username: Optional[str] = None
+    first_name: Optional[str] = None
+
+
+class TelegramTokenVerify(BaseModel):
+    """Verify Telegram login token from web"""
+    token: str = Field(..., min_length=6, max_length=6, description="6-character login token")
+
+
 class TelegramAuthResponse(BaseModel):
     """Telegram authentication response"""
     user: "UserResponse"

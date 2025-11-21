@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovoAI - Telegram Login</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        
+        .status.loading {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .login-form {
+            display: none;
+        }
+        
+        .login-form.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #5568d3;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .help-text {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .help-text a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .help-text a:hover {
+            text-decoration: underline;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>🏋️ MovoAI</h1>
+            <p>Your Personal Fitness Assistant</p>
+        </div>
+        
+        <div id="status" class="status loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 10px;">Checking authentication...</p>
+        </div>
+        
+        <form id="loginForm" class="login-form">
+            <div class="form-group">
+                <label for="token">Telegram Login Token</label>
+                <input 
+                    type="text" 
+                    id="token" 
+                    name="token" 
+                    placeholder="Enter 6-character code"
+                    maxlength="6"
+                    required
+                    autocomplete="off">
+            </div>
+            
+            <button type="submit" id="submitBtn">
+                Login
+            </button>
+            
+            <div class="help-text">
+                Don't have a token?<br>
+                Open <a href="https://t.me/MovoKioBot" target="_blank">@MovoKioBot</a> 
+                and send <code>/login</code>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const API_BASE = 'https://movokio.com/api/v1/auth';
+        // For local testing:
+        // const API_BASE = 'http://localhost:8000/api/v1/auth';
+        
+        const statusDiv = document.getElementById('status');
+        const loginForm = document.getElementById('loginForm');
+        const tokenInput = document.getElementById('token');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        // Update status display
+        function setStatus(message, type = 'loading') {
+            statusDiv.className = `status ${type}`;
+            if (type === 'loading') {
+                statusDiv.innerHTML = `
+                    <div class="spinner"></div>
+                    <p style="margin-top: 10px;">${message}</p>
+                `;
+            } else {
+                statusDiv.innerHTML = `<p>${message}</p>`;
+            }
+        }
+        
+        // Store tokens and redirect
+        function handleAuthSuccess(data) {
+            localStorage.setItem('access_token', data.access_token);
+            localStorage.setItem('refresh_token', data.refresh_token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            
+            setStatus('✓ Login successful! Redirecting...', 'success');
+            
+            // Redirect to dashboard after 1 second
+            setTimeout(() => {
+                window.location.href = '/dashboard.html';
+            }, 1000);
+        }
+        
+        // Try automatic login from Telegram
+        async function tryAutoLogin() {
+            if (window.Telegram?.WebApp) {
+                const tg = window.Telegram.WebApp;
+                tg.expand();
+                
+                const initData = tg.initData;
+                
+                if (initData) {
+                    setStatus('Authenticating with Telegram...', 'loading');
+                    
+                    try {
+                        const response = await fetch(`${API_BASE}/telegram/auto-login`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ init_data: initData })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            handleAuthSuccess(data);
+                            return true;
+                        } else {
+                            setStatus(`Auto-login failed: ${data.detail}`, 'error');
+                            showManualLogin();
+                            return false;
+                        }
+                    } catch (error) {
+                        console.error('Auto-login error:', error);
+                        setStatus('Auto-login failed. Please use manual login.', 'error');
+                        showManualLogin();
+                        return false;
+                    }
+                }
+            }
+            
+            // Not from Telegram or no initData
+            showManualLogin();
+            return false;
+        }
+        
+        // Show manual login form
+        function showManualLogin() {
+            statusDiv.style.display = 'none';
+            loginForm.classList.add('active');
+            tokenInput.focus();
+        }
+        
+        // Handle manual token login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const token = tokenInput.value.trim().toUpperCase();
+            
+            if (token.length !== 6) {
+                alert('Please enter a 6-character token');
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Verifying...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/telegram/verify-token`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ token: token })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    loginForm.style.display = 'none';
+                    statusDiv.style.display = 'block';
+                    handleAuthSuccess(data);
+                } else {
+                    alert(data.detail || 'Invalid token. Please try again.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Login';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Login failed. Please check your connection and try again.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Login';
+            }
+        });
+        
+        // Auto-uppercase token input
+        tokenInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
+        
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            // Check if already logged in
+            const accessToken = localStorage.getItem('access_token');
+            if (accessToken) {
+                setStatus('Already logged in. Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = '/dashboard.html';
+                }, 1000);
+                return;
+            }
+            
+            // Try automatic login
+            tryAutoLogin();
+        });
+    </script>
+</body>
+</html>
