@@ -57,7 +57,7 @@ def create_user_with_auth_method(
         **user_data.model_dump()
     )
     db.add(user)
-    db.flush()  # Get user.id
+    db.flush()  # Get user.user_id
     
     # Update telegram_id if telegram auth
     if auth_provider == "telegram":
@@ -65,7 +65,7 @@ def create_user_with_auth_method(
     
     # Create auth method
     auth_method = UserAuthMethod(
-        user_id=user.id,
+        user_id=user.user_id,
         auth_provider=auth_provider,
         auth_identifier=auth_identifier,
         auth_data=auth_data or {},
@@ -157,7 +157,7 @@ async def telegram_login(
     )
     
     # Generate tokens
-    tokens = generate_tokens(user.id)
+    tokens = generate_tokens(user.user_id)
     
     return TelegramAuthResponse(
         user=UserResponse.model_validate(user),
@@ -194,7 +194,7 @@ async def telegram_link(
     ).first()
     
     if existing:
-        if existing.user_id == current_user.id:
+        if existing.user_id == current_user.user_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Telegram already linked to your account"
@@ -207,7 +207,7 @@ async def telegram_link(
     
     # Link Telegram to user
     auth_method = UserAuthMethod(
-        user_id=current_user.id,
+        user_id=current_user.user_id,
         auth_provider="telegram",
         auth_identifier=telegram_id,
         auth_data={
@@ -343,7 +343,7 @@ async def phone_verify_code(
     )
     
     # Generate tokens
-    tokens = generate_tokens(user.id)
+    tokens = generate_tokens(user.user_id)
     
     return PhoneAuthResponse(
         user=UserResponse.model_validate(user),
@@ -400,7 +400,7 @@ async def phone_link(
     
     # Link phone to user
     auth_method = UserAuthMethod(
-        user_id=current_user.id,
+        user_id=current_user.user_id,
         auth_provider="sms",
         auth_identifier=phone_number,
         is_verified=True,
@@ -525,7 +525,7 @@ async def email_verify_code(
     )
     
     # Generate tokens
-    tokens = generate_tokens(user.id)
+    tokens = generate_tokens(user.user_id)
     
     return EmailAuthResponse(
         user=UserResponse.model_validate(user),
@@ -582,7 +582,7 @@ async def email_link(
     
     # Link email to user
     auth_method = UserAuthMethod(
-        user_id=current_user.id,
+        user_id=current_user.user_id,
         auth_provider="email",
         auth_identifier=email,
         is_verified=True,
@@ -658,7 +658,7 @@ async def google_callback(
     )
     
     # Generate tokens
-    tokens = generate_tokens(user.id)
+    tokens = generate_tokens(user.user_id)
     
     return GoogleAuthResponse(
         user=UserResponse.model_validate(user),
@@ -695,7 +695,7 @@ async def google_link(
     ).first()
     
     if existing:
-        if existing.user_id == current_user.id:
+        if existing.user_id == current_user.user_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Google account already linked to your account"
@@ -708,7 +708,7 @@ async def google_link(
     
     # Link Google to user
     auth_method = UserAuthMethod(
-        user_id=current_user.id,
+        user_id=current_user.user_id,
         auth_provider="google",
         auth_identifier=google_id,
         auth_data={
@@ -749,7 +749,7 @@ async def refresh_token(
         )
     
     # Verify user exists
-    user = db.query(User).filter(User.id == user_id).first()
+    user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -815,7 +815,7 @@ async def delete_auth_method(
     # Check if user has other auth methods
     other_methods = db.query(UserAuthMethod).filter(
         and_(
-            UserAuthMethod.user_id == current_user.id,
+            UserAuthMethod.user_id == current_user.user_id,
             UserAuthMethod.id != method_id
         )
     ).count()
@@ -830,7 +830,7 @@ async def delete_auth_method(
     if auth_method.is_primary:
         new_primary = db.query(UserAuthMethod).filter(
             and_(
-                UserAuthMethod.user_id == current_user.id,
+                UserAuthMethod.user_id == current_user.user_id,
                 UserAuthMethod.id != method_id
             )
         ).first()
@@ -868,7 +868,7 @@ async def set_primary_auth_method(
     
     # Remove primary from all other methods
     db.query(UserAuthMethod).filter(
-        UserAuthMethod.user_id == current_user.id
+        UserAuthMethod.user_id == current_user.user_id
     ).update({"is_primary": False})
     
     # Set as primary

@@ -13,7 +13,7 @@ class UserAuthMethod(Base):
     __tablename__ = "user_auth_methods"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
     auth_provider = Column(String(20), nullable=False)  # telegram, sms, email, google
     auth_identifier = Column(String(255), nullable=False, index=True)  # telegram_id, phone, email, google_id
     auth_data = Column(JSON, nullable=True)  # Additional data like tokens, usernames

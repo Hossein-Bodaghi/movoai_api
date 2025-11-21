@@ -1,7 +1,7 @@
 """
 User model
 """
-from sqlalchemy import Column, Integer, BigInteger, String, Float, ARRAY, DateTime, Text
+from sqlalchemy import Column, Integer, BigInteger, String, Float, Boolean, ARRAY, DateTime, Text, Numeric
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
@@ -9,23 +9,63 @@ from app.database.base import Base
 
 
 class User(Base):
-    """User model - matches existing users table from schema.sql"""
+    """User model - matches existing users table from database"""
     __tablename__ = "users"
     
-    id = Column(Integer, primary_key=True, index=True)
+    # Primary key - database uses user_id
+    user_id = Column(Integer, primary_key=True, index=True, name='user_id')
+    
+    # Authentication fields
+    email = Column(String(255), unique=True, nullable=True)
+    password_hash = Column(String(255), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
     telegram_id = Column(BigInteger, unique=True, nullable=True, index=True)
-    name = Column(Text, nullable=False)
-    gender = Column(Text, nullable=False)
-    age = Column(Integer, nullable=False)
-    daily_activity = Column(Text, nullable=False)
-    fitness_level = Column(Text, nullable=False)
-    fitness_goals = Column(ARRAY(Text), nullable=False)
-    height_cm = Column(Integer, nullable=False)
-    weight_kg = Column(Integer, nullable=False)
-    workout_style = Column(Text, nullable=True)
+    
+    # Profile fields
+    age = Column(Integer, nullable=True)
+    weight = Column(Numeric(5, 2), nullable=True)
+    height = Column(Numeric(5, 2), nullable=True)
+    gender = Column(String(20), nullable=True)
+    
+    # Fitness fields
+    focus = Column(String(50), nullable=True)
+    physical_fitness = Column(String(50), nullable=True)
+    fitness_days = Column(Integer, nullable=True)
+    workout_goal_id = Column(Integer, nullable=True)
+    nutrition_goal_id = Column(Integer, nullable=True)
+    
+    # Sport fields
+    sport = Column(String(100), nullable=True)
+    sport_days = Column(Integer, nullable=True)
+    specialized_sport = Column(String(100), nullable=True)
+    
+    # Training fields
+    training_location = Column(String(50), nullable=True)
+    workout_limitations = Column(Text, nullable=True)
+    
+    # Nutrition fields
+    dietary_restrictions = Column(Text, nullable=True)
+    cooking_time = Column(String(50), nullable=True)
+    cooking_skill = Column(String(50), nullable=True)
+    kitchen_appliances = Column(Text, nullable=True)
+    food_preferences = Column(Text, nullable=True)
+    forbidden_ingredients = Column(Text, nullable=True)
+    
+    # Credits and referrals
+    credits = Column(Integer, default=0, nullable=False)
+    referral_code = Column(String(20), unique=True, nullable=True)
+    has_used_referral = Column(Boolean, default=False, nullable=False)
+    
+    # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     
     # Relationships
-    auth_methods = relationship("UserAuthMethod", back_populates="user", cascade="all, delete-orphan")
-    user_plans = relationship("UserPlan", back_populates="user", cascade="all, delete-orphan")
-    workout_logs = relationship("UserWorkoutLog", back_populates="user", cascade="all, delete-orphan")
+    auth_methods = relationship("UserAuthMethod", back_populates="user", cascade="all, delete-orphan", foreign_keys="[UserAuthMethod.user_id]")
+    user_plans = relationship("UserPlan", back_populates="user", cascade="all, delete-orphan", foreign_keys="[UserPlan.user_id]")
+    workout_logs = relationship("UserWorkoutLog", back_populates="user", cascade="all, delete-orphan", foreign_keys="[UserWorkoutLog.user_id]")
+    
+    # Property for backward compatibility
+    @property
+    def id(self):
+        return self.user_id

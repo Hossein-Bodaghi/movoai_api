@@ -25,7 +25,7 @@ async def get_current_user_profile(
     # Reload user with auth methods
     user = db.query(User).options(
         joinedload(User.auth_methods)
-    ).filter(User.id == current_user.id).first()
+    ).filter(User.user_id == current_user.user_id).first()
     
     return UserWithAuthMethods.model_validate(user)
 
@@ -76,13 +76,13 @@ async def get_user_by_id(
     Get user by ID (only self or admin)
     For now, users can only access their own profile
     """
-    if user_id != current_user.id:
+    if user_id != current_user.user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this user"
         )
     
-    user = db.query(User).filter(User.id == user_id).first()
+    user = db.query(User).filter(User.user_id == user_id).first()
     
     if not user:
         raise HTTPException(

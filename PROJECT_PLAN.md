@@ -18,10 +18,10 @@ This document outlines a 4-phase incremental development approach for building t
 
 ---
 
-## 🔵 PHASE 1: Foundation & User Management APIs
+## 🔵 PHASE 1: Foundation & Exercise/Workout APIs (No Auth Required)
 
 ### Objective
-Establish the core backend infrastructure and implement complete user authentication and profile management.
+Establish the core backend infrastructure and implement public exercise library and workout plan browsing. **No authentication required** - allow Telegram/web users to explore content freely.
 
 ### AI Prompt for Phase 1
 
@@ -32,377 +32,291 @@ PROJECT STRUCTURE:
 - app/
   - main.py (FastAPI application entry point)
   - config.py (Database connection, environment variables)
-  - dependencies.py (Shared dependencies like DB sessions)
+  - dependencies.py (Optional auth support, DB sessions)
   - models/
-    - user.py (SQLAlchemy User model)
+    - exercise.py (SQLAlchemy Exercise model)
+    - workout_plan.py (SQLAlchemy WorkoutPlan model)
+    - plan_exercise.py (SQLAlchemy PlanExercise model)
   - schemas/
-    - user.py (Pydantic schemas for User)
+    - exercise.py (Pydantic schemas for Exercise)
+    - workout_plan.py (Pydantic schemas for WorkoutPlan)
   - api/
     - v1/
       - endpoints/
-        - users.py (User CRUD endpoints)
+        - exercises.py (Public exercise endpoints - NO AUTH)
+        - workout_plans.py (Public workout plan browsing - NO AUTH)
       - api.py (API router aggregator)
   - database/
     - session.py (Database session management)
     - base.py (SQLAlchemy declarative base)
   - core/
-    - security.py (Password hashing, JWT token handling)
     - config.py (Settings management with pydantic-settings)
 - tests/
-  - test_users.py (Unit tests for user endpoints)
+  - test_exercises.py (Unit tests for exercise endpoints)
+  - test_workout_plans.py (Unit tests for workout plan endpoints)
 - .env.example (Template for environment variables)
-- requirements.txt (Update with SQLAlchemy, passlib, python-jose)
+- requirements.txt (FastAPI, SQLAlchemy, PostgreSQL driver)
 - README.md (Setup instructions)
 
 DATABASE CONNECTION:
 - Connect to PostgreSQL database at /Zitan/database/
-- Use the existing 'users' table from schema.sql
+- Use existing tables: exercises, workout_plans, plan_exercises
 - Implement connection pooling
 - Add database migrations support (Alembic)
 
-AUTHENTICATION ARCHITECTURE:
-- Support multiple authentication providers: Telegram, SMS, Email, Google OAuth
-- Store user authentication methods in 'user_auth_methods' table:
-  - id, user_id, auth_provider (telegram/sms/email/google), auth_identifier (telegram_id/phone/email/google_id), is_verified, created_at
-- Allow users to link multiple auth methods to same account
-- Primary user identification via internal user_id (not tied to any provider)
-- JWT tokens contain user_id (provider-agnostic)
+EXERCISE LIBRARY ENDPOINTS (PUBLIC - NO AUTH):
+1. GET /api/v1/exercises
+   - List all exercises with pagination
+   - Query parameters: difficulty, goal, muscles, equipment, search
+   - Support English and French (exercise_en, exercise_fr)
+   - Return: id, exercise_en/fr, difficulty, goal, muscles, instructions, equipments, gif URLs
+   - NO AUTHENTICATION REQUIRED
+   
+2. GET /api/v1/exercises/{exercise_id}
+   - Get single exercise details
+   - Include male_gif_urls and female_gif_urls
+   - NO AUTHENTICATION REQUIRED
+   
+3. GET /api/v1/exercises/search
+   - Search exercises by name, muscle group, equipment
+   - Full-text search capability
+   - NO AUTHENTICATION REQUIRED
+   
+4. GET /api/v1/exercises/filter
+   - Advanced filtering: difficulty, goal, muscles[], equipment[]
+   - Support multiple muscle groups and equipment types
+   - NO AUTHENTICATION REQUIRED
 
-NEW TABLES TO ADD:
-1. user_auth_methods:
-   - id (PK), user_id (FK to users), auth_provider (enum), auth_identifier (unique per provider), 
-   - auth_data (JSON: refresh_tokens, etc.), is_verified (boolean), is_primary (boolean), created_at, updated_at
+WORKOUT PLAN ENDPOINTS (PUBLIC - NO AUTH):
+1. GET /api/v1/workout-plans
+   - List all template workout plans (is_template=true)
+   - Include plan name, description (EN/FR), exercise count, weeks
+   - Pagination support
+   - NO AUTHENTICATION REQUIRED
    
-2. verification_codes:
-   - id (PK), identifier (phone/email), code (6-digit), code_type (sms/email), 
-   - expires_at, attempts (int), verified (boolean), created_at
+2. GET /api/v1/workout-plans/{plan_id}
+   - Get detailed plan with all exercises
+   - Return: plan details + list of plan_exercises with exercise info
+   - Include day_number, week_number, sets, reps, duration, rest, order
+   - Group by weeks and days
+   - NO AUTHENTICATION REQUIRED
+   
+3. GET /api/v1/workout-plans/featured
+   - Get featured/recommended workout plans
+   - NO AUTHENTICATION REQUIRED
 
-USER MANAGEMENT ENDPOINTS:
-1. POST /api/v1/auth/telegram/login
-   - Authenticate with Telegram (auto-login via Telegram Web App)
-   - Input: telegram_id, telegram_username, telegram_first_name, telegram_auth_date, telegram_hash
-   - Verify Telegram data signature
-   - If user exists (by telegram_id), return JWT token
-   - If new user, create user + user_auth_method record, return JWT token
-   
-2. POST /api/v1/auth/telegram/link
-   - Link Telegram to existing account (requires JWT)
-   - Verify Telegram data, add to user_auth_methods
-   
-3. POST /api/v1/auth/phone/send-code
-   - Send SMS verification code
-   - Input: phone_number
-   - Generate 6-digit code, send via SMS provider (Twilio/etc)
-   - Store in verification_codes table with 5-minute expiry
-   
-4. POST /api/v1/auth/phone/verify-code
-   - Verify SMS code and login/register
-   - Input: phone_number, code
-   - If code valid and user exists, return JWT token
-   - If code valid and new user, create user + user_auth_method, return JWT token
-   
-5. POST /api/v1/auth/phone/link
-   - Link phone number to existing account (requires JWT)
-   - Send verification code first, then verify
-   
-6. POST /api/v1/auth/email/send-code
-   - Send email verification code
-   - Input: email
-   - Generate 6-digit code, send via email provider (SendGrid/etc)
-   - Store in verification_codes table with 10-minute expiry
-   
-7. POST /api/v1/auth/email/verify-code
-   - Verify email code and login/register
-   - Input: email, code
-   - If code valid and user exists, return JWT token
-   - If code valid and new user, create user + user_auth_method, return JWT token
-   
-8. POST /api/v1/auth/email/link
-   - Link email to existing account (requires JWT)
-   
-9. GET /api/v1/auth/google/login
-   - Redirect to Google OAuth consent screen
-   - Use OAuth2 flow with google-auth library
-   
-10. GET /api/v1/auth/google/callback
-    - Handle Google OAuth callback
-    - Exchange code for Google user info
-    - If user exists (by google_id), return JWT token
-    - If new user, create user + user_auth_method, return JWT token
-    
-11. POST /api/v1/auth/google/link
-    - Link Google account to existing account (requires JWT)
-    
-12. GET /api/v1/auth/methods
-    - List all auth methods linked to current user
-    - Requires JWT authentication
-    
-13. DELETE /api/v1/auth/methods/{method_id}
-    - Unlink authentication method (must have at least one remaining)
-    - Requires JWT authentication
-    
-14. POST /api/v1/auth/methods/{method_id}/set-primary
-    - Set primary authentication method
-    - Requires JWT authentication
-    
-15. POST /api/v1/auth/refresh
-    - Refresh JWT access token using refresh token
-    - Return new access token
-    
-16. POST /api/v1/auth/logout
-    - Invalidate refresh token
-    - Optional: add token to blacklist
-   
-17. GET /api/v1/users/me
-    - Return current authenticated user profile
-    - Require JWT authentication
-   
-18. PUT /api/v1/users/me
-    - Update user profile (age, weight_kg, fitness_goals, workout_style, etc.)
-    - Require JWT authentication
-   
-19. DELETE /api/v1/users/me
-    - Soft delete or hard delete user account
-    - Cascade delete all user_auth_methods
-    - Require JWT authentication
-   
-20. GET /api/v1/users/{user_id}
-    - Get user by ID (admin or self only)
-   
+ANONYMOUS/GUEST SESSION (OPTIONAL):
+- Allow users to browse all content without login
+- Later phases can add session-based tracking for guest users
+- Store guest preferences in browser localStorage (frontend)
+
 SECURITY:
-- Implement JWT token-based authentication (access token + refresh token)
-  - Access token: Short-lived (15 minutes), contains user_id only
-  - Refresh token: Long-lived (30 days), stored in httpOnly cookie or secure storage
-- Telegram authentication: Verify data hash using bot token
-  - Validate telegram_auth_date (not older than 1 day)
-  - Verify hash = HMAC-SHA256(data, SHA256(bot_token))
-- SMS/Email codes: 6-digit numeric, rate-limited (max 3 per hour per identifier)
-- Google OAuth: Use google-auth library, verify ID token
 - Add middleware for CORS (allow frontend origin at /MovoAI/)
 - Input validation with Pydantic models
 - SQL injection protection via SQLAlchemy ORM
-- Rate limiting: 5 login attempts per minute per IP
-- Prevent account enumeration: same response for existing/non-existing users
+- Rate limiting: 100 requests per minute per IP (generous for public API)
+- No sensitive data exposure in public endpoints
 
 ERROR HANDLING:
-- Custom exception handlers for 400, 401, 404, 422, 500
+- Custom exception handlers for 400, 404, 422, 500
 - Structured JSON error responses
 - Logging for all errors
 
 TESTING:
 - Write pytest tests for all endpoints
 - Mock database connections
-- Test authentication flows
-- Test input validation
+- Test pagination and filtering
+- Test search functionality
 
 DOCUMENTATION:
 - Auto-generated OpenAPI docs at /docs
 - Add detailed descriptions for all endpoints
 - Include example requests/responses
+- Emphasize public/no-auth nature of endpoints
 
-THIRD-PARTY INTEGRATIONS:
-- Telegram Bot API: For verifying Telegram login data
-- Twilio/SNS: For sending SMS verification codes
-- SendGrid/SES: For sending email verification codes
-- Google OAuth 2.0: For Google sign-in
-- Store API keys and secrets in environment variables
+PERFORMANCE OPTIMIZATIONS:
+- Database indexing on: difficulty, goal, muscles, equipment
+- Caching for exercise library (rarely changes)
+- Eager loading for workout plans with exercises
+- Response compression
 
 DEPLOYMENT READINESS:
 - Environment variable configuration (.env file):
-  - DATABASE_URL, JWT_SECRET_KEY, JWT_REFRESH_SECRET_KEY
-  - TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_USERNAME
-  - TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER
-  - SENDGRID_API_KEY, EMAIL_FROM_ADDRESS
-  - GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI
+  - DATABASE_URL
+  - FRONTEND_URL (for CORS)
 - Docker support (optional Dockerfile)
 - Health check endpoint: GET /health
 - Logging configuration (structured JSON logs)
 ```
 
 ### Phase 1 Deliverables
-✅ Multi-provider authentication system (Telegram, SMS, Email, Google)  
-✅ JWT access & refresh token mechanism  
-✅ User can link multiple auth methods to one account  
-✅ Verification code system for SMS/Email  
-✅ User profile CRUD operations  
+✅ Exercise library fully accessible (no auth)  
+✅ Workout plan browsing functional (no auth)  
+✅ Search and filtering working smoothly  
 ✅ Database connection established  
 ✅ API documentation accessible at `/docs`  
-✅ Unit tests passing for all auth flows  
-✅ **Frontend Integration Test**: Login with each provider, link accounts, view/edit profile from `/MovoAI/`
+✅ Unit tests passing for all endpoints  
+✅ **Frontend Integration Test**: Browse exercises, view workout plans, search/filter from Telegram/web without login
 
 ### Frontend Testing Checklist Phase 1
-- [ ] User can login via Telegram (auto-login)
-- [ ] User can login via SMS code
-- [ ] User can login via Email code
-- [ ] User can login via Google OAuth
-- [ ] User can link additional auth methods to account
-- [ ] User can set primary auth method
-- [ ] User can unlink auth methods (keeping at least one)
-- [ ] User profile displays correctly
-- [ ] User can update profile information
-- [ ] Access token expires and refreshes correctly
-- [ ] Error messages display properly for each auth flow
-- [ ] Rate limiting works (code sending, login attempts)
+- [ ] Users can browse exercise library without login
+- [ ] Exercise search returns relevant results
+- [ ] Exercise filtering by muscle, difficulty, equipment works
+- [ ] Users can view workout plan templates
+- [ ] Workout plan details show all exercises grouped by week/day
+- [ ] GIF animations display correctly
+- [ ] Multi-language support (EN/FR) works
+- [ ] Pagination works smoothly
+- [ ] Fast response times (<300ms for lists)
 
 ---
 
-## 🟢 PHASE 2: Workflow Management APIs
+## 🟢 PHASE 2: User Workout Tracking (Session-Based, Optional Auth)
 
 ### Objective
-Implement workout plan management, exercise library access, and user workout plan assignment/tracking.
+Implement workout logging, user plan assignment, and progress tracking. Support both **guest sessions** (browser storage) and **optional lightweight auth** (simple user ID) for data persistence.
 
 ### AI Prompt for Phase 2
 
 ```
-Extend the FastAPI backend at /movoai_api/ to add workout workflow management:
+Extend the FastAPI backend at /movoai_api/ to add user workout tracking with minimal auth:
 
 NEW MODELS (app/models/):
-- workout_plan.py (SQLAlchemy model for workout_plans table)
-- exercise.py (SQLAlchemy model for exercises table)
-- plan_exercise.py (SQLAlchemy model for plan_exercises table)
+- user.py (Minimal user model: id, created_at, last_active)
 - user_plan.py (SQLAlchemy model for user_plans table)
 - workout_log.py (SQLAlchemy model for user_workout_logs table)
+- guest_session.py (Optional: track anonymous sessions)
 
 NEW SCHEMAS (app/schemas/):
-- workout_plan.py (Pydantic schemas for plans)
-- exercise.py (Pydantic schemas for exercises)
-- plan_exercise.py (Pydantic schemas for plan-exercise relationships)
+- user.py (Minimal user schemas)
 - user_plan.py (Pydantic schemas for user plans)
 - workout_log.py (Pydantic schemas for workout logs)
 
-EXERCISE LIBRARY ENDPOINTS (app/api/v1/endpoints/exercises.py):
-1. GET /api/v1/exercises
-   - List all exercises with pagination
-   - Query parameters: difficulty, goal, muscles, equipment
-   - Support English and French (exercise_en, exercise_fr)
-   - Return: id, exercise_en/fr, difficulty, goal, muscles, instructions, equipments, gif URLs
-   
-2. GET /api/v1/exercises/{exercise_id}
-   - Get single exercise details
-   - Include male_gif_urls and female_gif_urls
-   
-3. GET /api/v1/exercises/search
-   - Search exercises by name, muscle group, equipment
-   - Full-text search capability
-   
-4. GET /api/v1/exercises/filter
-   - Advanced filtering: difficulty, goal, muscles[], equipment[]
-   - Support multiple muscle groups and equipment types
+MINIMAL USER SYSTEM:
+- Simple user creation: POST /api/v1/users (no password, just returns user_id)
+- User can be created on-demand when first action needs persistence
+- No password, no email, no complex auth - just an ID
+- Frontend stores user_id in localStorage
+- Optional: Generate anonymous guest_id for browser tracking
 
-WORKOUT PLAN ENDPOINTS (app/api/v1/endpoints/workout_plans.py):
-1. GET /api/v1/workout-plans
-   - List all template workout plans (is_template=true)
-   - Include plan name, description (EN/FR), exercise count
-   
-2. GET /api/v1/workout-plans/{plan_id}
-   - Get detailed plan with all exercises
-   - Return: plan details + list of plan_exercises with exercise info
-   - Include day_number, week_number, sets, reps, duration, rest, order
-   
-3. POST /api/v1/workout-plans
-   - Create custom workout plan (admin/trainer only)
-   - Require: name_en, description_en, created_by_user_id
-   
-4. PUT /api/v1/workout-plans/{plan_id}
-   - Update workout plan details
-   
-5. DELETE /api/v1/workout-plans/{plan_id}
-   - Delete workout plan (cascade to plan_exercises)
-   
-6. POST /api/v1/workout-plans/{plan_id}/exercises
-   - Add exercise to plan
-   - Require: exercise_id, day_number, week_number, sets, reps, duration_seconds, rest_seconds, order_in_day
-
-USER WORKOUT PLAN ENDPOINTS (app/api/v1/endpoints/user_plans.py):
-1. GET /api/v1/users/me/plans
-   - Get all workout plans assigned to current user
-   - Filter by status: active, completed, paused
-   
-2. POST /api/v1/users/me/plans
-   - Assign workout plan to current user
+USER WORKOUT PLAN ENDPOINTS (OPTIONAL AUTH):
+1. POST /api/v1/users/{user_id}/plans
+   - Assign workout plan to user
    - Require: plan_id, start_date
    - Set status to 'active'
+   - NO JWT required, just user_id in path
    
-3. GET /api/v1/users/me/plans/{user_plan_id}
+2. GET /api/v1/users/{user_id}/plans
+   - Get all workout plans assigned to user
+   - Filter by status: active, completed, paused
+   - NO JWT required
+   
+3. GET /api/v1/users/{user_id}/plans/{user_plan_id}
    - Get detailed user plan with progress
    - Include workout logs for each exercise
+   - NO JWT required
    
-4. PUT /api/v1/users/me/plans/{user_plan_id}
+4. PUT /api/v1/users/{user_id}/plans/{user_plan_id}
    - Update user plan status (active, completed, paused)
+   - NO JWT required
    
-5. DELETE /api/v1/users/me/plans/{user_plan_id}
+5. DELETE /api/v1/users/{user_id}/plans/{user_plan_id}
    - Remove plan from user
+   - NO JWT required
 
-WORKOUT LOGGING ENDPOINTS (app/api/v1/endpoints/workout_logs.py):
-1. POST /api/v1/workout-logs
+WORKOUT LOGGING ENDPOINTS (OPTIONAL AUTH):
+1. POST /api/v1/users/{user_id}/workout-logs
    - Log completed workout
-   - Require: plan_exercise_id, date_performed, sets_completed, reps_completed, duration_seconds_completed
-   - Automatically associate with current user
+   - Require: plan_exercise_id, date_performed, sets_completed, reps_completed
+   - NO JWT required
    
-2. GET /api/v1/workout-logs
+2. GET /api/v1/users/{user_id}/workout-logs
    - Get user's workout history
    - Query params: start_date, end_date, plan_exercise_id
+   - NO JWT required
    
-3. GET /api/v1/users/me/progress
+3. GET /api/v1/users/{user_id}/progress
    - Get workout progress statistics
    - Return: total workouts, exercises completed, workout streak, weekly summary
+   - NO JWT required
    
-4. PUT /api/v1/workout-logs/{log_id}
+4. PUT /api/v1/users/{user_id}/workout-logs/{log_id}
    - Edit workout log entry
+   - NO JWT required
    
-5. DELETE /api/v1/workout-logs/{log_id}
+5. DELETE /api/v1/users/{user_id}/workout-logs/{log_id}
    - Delete workout log entry
+   - NO JWT required
+
+SIMPLE USER CREATION:
+1. POST /api/v1/users
+   - Create new anonymous user
+   - No input required (or optional: telegram_id, guest_id)
+   - Return: user_id, created_at
+   - Frontend stores user_id in localStorage
+   
+2. GET /api/v1/users/{user_id}
+   - Get basic user info
+   - Return: user_id, created_at, workout_count, plan_count
+   - NO JWT required
+
+GUEST SESSION SUPPORT:
+- Frontend can work completely offline with localStorage
+- When user wants to persist data: call POST /api/v1/users, get user_id
+- User can "claim" their data later by linking auth (Phase 4)
+- Optional: POST /api/v1/users/{user_id}/migrate to merge guest data
 
 BUSINESS LOGIC:
-- Validate exercise exists before adding to plan
-- Ensure user can only access their own plans and logs
-- Calculate workout completion percentage
-- Track workout streaks and statistics
-- Support multi-week workout plans
+- No complex auth validation, just check user_id exists
+- Rate limiting per IP to prevent abuse (100 req/min)
+- User can only access data if they know the user_id (security by obscurity for now)
+- Phase 4 will add proper auth and ownership validation
 
 PERFORMANCE OPTIMIZATIONS:
 - Eager loading for related entities (plans with exercises)
-- Database indexing on foreign keys
+- Database indexing on foreign keys (user_id, plan_id)
 - Pagination for large result sets
-- Caching for exercise library (rarely changes)
+- Cache user progress calculations
 
 TESTING:
 - Test CRUD operations for all new endpoints
-- Test cascading deletes (plan deletion)
-- Test user authorization (users can't access others' plans)
-- Test workout log statistics calculations
+- Test user creation flow
+- Test workout logging without auth
+- Test progress calculations
 - Integration tests with database
 
 DOCUMENTATION:
 - Update OpenAPI docs with new endpoints
-- Add request/response examples for complex queries
-- Document filtering and search parameters
+- Emphasize minimal auth approach
+- Document migration path for Phase 4 auth
+- Include examples for frontend localStorage usage
 ```
 
 ### Phase 2 Deliverables
-✅ Exercise library accessible with search/filter  
-✅ Workout plan CRUD operations  
-✅ User can be assigned workout plans  
-✅ Workout logging functionality  
+✅ Minimal user system (just ID, no passwords)  
+✅ User can assign workout plans to themselves  
+✅ Workout logging functional without JWT  
 ✅ Progress tracking and statistics  
+✅ Frontend can store user_id in localStorage  
 ✅ All endpoints tested with pytest  
-✅ **Frontend Integration Test**: Browse exercises, view plans, assign plan, log workout from `/MovoAI/`
+✅ **Frontend Integration Test**: Create user, assign plan, log workouts, view progress - all without login
 
 ### Frontend Testing Checklist Phase 2
-- [ ] User can browse exercise library
-- [ ] User can filter exercises by muscle group, difficulty
-- [ ] User can view workout plan details
-- [ ] User can be assigned a workout plan
+- [ ] User can create anonymous account (just get user_id)
+- [ ] User_id persists in localStorage
+- [ ] User can assign workout plan to themselves
 - [ ] User can log completed workouts
 - [ ] User can view workout history and progress
-- [ ] Multi-week plans display correctly
+- [ ] Multi-week plans track progress correctly
+- [ ] No login/password required for any action
+- [ ] Works seamlessly from Telegram WebApp
 
 ---
 
-## 🟡 PHASE 3: AI Agent Foundation & Integration
+## 🟡 PHASE 3: AI Agent Foundation (No Auth Required)
 
 ### Objective
-Integrate LangChain for AI-powered workout recommendations, implement conversation management, and create intelligent fitness coaching capabilities.
+Integrate LangChain for AI-powered workout recommendations, implement conversation management, and create intelligent fitness coaching. **Works with or without user_id** - AI can provide recommendations to anyone.
 
 ### AI Prompt for Phase 3
 
@@ -461,48 +375,51 @@ LANGCHAIN INTEGRATION:
    - Progress analysis template
    - Motivational messaging template
 
-AI RECOMMENDATION ENDPOINTS (app/api/v1/endpoints/ai_recommendations.py):
+AI RECOMMENDATION ENDPOINTS (PUBLIC - NO AUTH):
 1. POST /api/v1/ai/recommend-workout
-   - Input: user preferences, goals, available equipment, time constraints
+   - Input: user preferences, goals, available equipment, time constraints, optional user_id
    - Output: Personalized workout plan with exercises
-   - Use LangChain to analyze user profile and generate recommendations
-   - Save recommendation to database
+   - Use LangChain to generate recommendations
+   - If user_id provided, can consider their history
+   - NO AUTH REQUIRED
    
 2. POST /api/v1/ai/analyze-progress
-   - Input: user_id, date_range
+   - Input: user_id (optional), workout history or date_range
    - Output: AI-generated progress analysis, insights, suggestions
-   - Analyze workout logs and provide feedback
+   - Works with or without user_id (can analyze provided data)
+   - NO AUTH REQUIRED
    
 3. POST /api/v1/ai/suggest-exercises
-   - Input: target muscles, difficulty, equipment
+   - Input: target muscles, difficulty, equipment, optional context
    - Output: List of exercises with AI-generated reasoning
    - Use vector similarity search on exercise embeddings
+   - NO AUTH REQUIRED
 
-AI CONVERSATION ENDPOINTS (app/api/v1/endpoints/ai_chat.py):
+AI CONVERSATION ENDPOINTS (PUBLIC - OPTIONAL USER TRACKING):
 1. POST /api/v1/ai/chat
-   - Input: user message
+   - Input: user message, optional user_id or session_id
    - Output: AI assistant response
-   - Maintain conversation context
-   - Save conversation to database
-   - Support multi-turn conversations
+   - Maintain conversation context (in-memory or session-based)
+   - Optionally save conversation if user_id provided
+   - NO AUTH REQUIRED
    
-2. GET /api/v1/ai/conversations
-   - Get user's conversation history
-   - Pagination support
+2. GET /api/v1/ai/conversations/{session_id}
+   - Get conversation by session_id (temporary, 24hr expiry)
+   - NO AUTH REQUIRED
    
-3. GET /api/v1/ai/conversations/{conversation_id}
-   - Get specific conversation thread
+3. GET /api/v1/users/{user_id}/conversations (OPTIONAL)
+   - Get user's conversation history (if user_id exists)
+   - NO AUTH REQUIRED
    
-4. DELETE /api/v1/ai/conversations/{conversation_id}
-   - Delete conversation history
-   
-5. POST /api/v1/ai/session/start
+4. POST /api/v1/ai/session/start
    - Start new AI coaching session
-   - Return session_id
+   - Return session_id (can be anonymous)
+   - NO AUTH REQUIRED
    
-6. POST /api/v1/ai/session/{session_id}/end
+5. POST /api/v1/ai/session/{session_id}/end
    - End AI coaching session
-   - Save session summary
+   - Save session summary (if user_id linked)
+   - NO AUTH REQUIRED
 
 AI AGENT BUSINESS LOGIC:
 - User Context Awareness:
@@ -578,25 +495,174 @@ DOCUMENTATION:
 ✅ **Frontend Integration Test**: Chat with AI coach, get recommendations, analyze progress from `/MovoAI/`
 
 ### Frontend Testing Checklist Phase 3
-- [ ] User can chat with AI fitness coach
+- [ ] Anyone can chat with AI fitness coach (no login)
 - [ ] AI provides relevant workout recommendations
-- [ ] AI analyzes user progress and provides feedback
-- [ ] Conversation context is maintained
+- [ ] AI analyzes progress (with or without user_id)
+- [ ] Conversation context maintained via session_id
 - [ ] AI suggests exercises based on goals
-- [ ] Recommendations are saved and accessible
+- [ ] Recommendations work without authentication
 - [ ] AI responses are timely and relevant
+- [ ] Works seamlessly in Telegram WebApp
 
 ---
 
-## 🟣 PHASE 4: Advanced AI Agents & Multi-Agent System
+## 🟣 PHASE 4: Full Authentication + Advanced AI Multi-Agent System
 
 ### Objective
-Implement specialized AI agents for different fitness domains, create a multi-agent orchestration system, and add advanced features like plan generation, injury prevention, and nutrition guidance.
+**PRIORITY 1**: Implement complete multi-provider authentication (Telegram, SMS, Email, Google OAuth) with account linking, securing user data.
+**PRIORITY 2**: Implement specialized AI agents for different fitness domains, create multi-agent orchestration system, and add advanced features like plan generation, injury prevention, and nutrition guidance.
 
 ### AI Prompt for Phase 4
 
 ```
-Extend the FastAPI backend at /movoai_api/ to create a sophisticated multi-agent AI system:
+Extend the FastAPI backend at /movoai_api/ to add FULL AUTHENTICATION first, then advanced multi-agent AI:
+
+=== PART 1: COMPLETE AUTHENTICATION SYSTEM (PRIORITY) ===
+
+NEW DEPENDENCIES:
+Add to requirements.txt:
+- passlib[bcrypt]>=1.7.4 (password hashing)
+- python-jose[cryptography]>=3.3.0 (JWT tokens)
+- python-multipart>=0.0.6 (form data)
+- httpx>=0.25.0 (for OAuth callbacks)
+
+NEW MODELS (app/models/):
+- auth_method.py (UserAuthMethod for multi-provider auth)
+  - Fields: id, user_id (FK), auth_provider (telegram/sms/email/google), auth_identifier, 
+    auth_data (JSON), is_verified, is_primary, created_at, updated_at
+- verification_code.py (VerificationCode for SMS/email codes)
+  - Fields: id, identifier, code, code_type, expires_at, attempts, verified, created_at
+
+NEW SCHEMAS (app/schemas/):
+- auth.py (Login, token, verification code schemas)
+
+AUTHENTICATION ENDPOINTS (app/api/v1/endpoints/auth.py):
+1. POST /api/v1/auth/telegram/login
+   - Authenticate with Telegram (Telegram WebApp auto-login)
+   - Input: telegram_id, telegram_username, telegram_first_name, telegram_auth_date, telegram_hash
+   - Verify Telegram data signature
+   - If user exists (by telegram_id), return JWT token
+   - If new user, create user + user_auth_method record, return JWT token
+   
+2. POST /api/v1/auth/telegram/link
+   - Link Telegram to existing account (requires JWT)
+   - Verify Telegram data, add to user_auth_methods
+   
+3. POST /api/v1/auth/phone/send-code
+   - Send SMS verification code (NO AUTH)
+   - Input: phone_number
+   - Generate 6-digit code, send via Twilio/etc
+   - Store in verification_codes table with 5-minute expiry
+   
+4. POST /api/v1/auth/phone/verify-code
+   - Verify SMS code and login/register (NO AUTH)
+   - Input: phone_number, code
+   - If code valid and user exists, return JWT token
+   - If code valid and new user, create user + user_auth_method, return JWT token
+   
+5. POST /api/v1/auth/phone/link
+   - Link phone number to existing account (requires JWT)
+   - Send verification code first, then verify
+   
+6. POST /api/v1/auth/email/send-code
+   - Send email verification code (NO AUTH)
+   - Input: email
+   - Generate 6-digit code, send via SendGrid/etc
+   - Store in verification_codes table with 10-minute expiry
+   
+7. POST /api/v1/auth/email/verify-code
+   - Verify email code and login/register (NO AUTH)
+   - Input: email, code
+   - If code valid and user exists, return JWT token
+   - If code valid and new user, create user + user_auth_method, return JWT token
+   
+8. POST /api/v1/auth/email/link
+   - Link email to existing account (requires JWT)
+   
+9. GET /api/v1/auth/google/login
+   - Redirect to Google OAuth consent screen (NO AUTH)
+   - Use OAuth2 flow with google-auth library
+   
+10. GET /api/v1/auth/google/callback
+    - Handle Google OAuth callback (NO AUTH)
+    - Exchange code for Google user info
+    - If user exists (by google_id), return JWT token
+    - If new user, create user + user_auth_method, return JWT token
+    
+11. POST /api/v1/auth/google/link
+    - Link Google account to existing account (requires JWT)
+    
+12. GET /api/v1/auth/methods
+    - List all auth methods linked to current user (requires JWT)
+    
+13. DELETE /api/v1/auth/methods/{method_id}
+    - Unlink authentication method (requires JWT)
+    - Must have at least one remaining method
+    
+14. POST /api/v1/auth/methods/{method_id}/set-primary
+    - Set primary authentication method (requires JWT)
+    
+15. POST /api/v1/auth/refresh
+    - Refresh JWT access token using refresh token (NO AUTH, uses refresh token)
+    - Return new access token
+    
+16. POST /api/v1/auth/logout
+    - Invalidate refresh token (requires JWT)
+    - Optional: add token to blacklist
+
+USER MIGRATION:
+17. POST /api/v1/auth/claim-account
+    - Migrate existing user_id data to authenticated account
+    - Input: old_user_id (from Phase 2), JWT token (from login)
+    - Migrate all workout logs, plans, conversations to authenticated user
+    - Delete old anonymous user record
+
+SECURED USER ENDPOINTS (app/api/v1/endpoints/users.py):
+1. GET /api/v1/users/me
+   - Return current authenticated user profile (requires JWT)
+   
+2. PUT /api/v1/users/me
+   - Update user profile (requires JWT)
+   - Fields: age, weight_kg, height_cm, fitness_goals, workout_style, etc.
+   
+3. DELETE /api/v1/users/me
+   - Delete user account (requires JWT)
+   - Cascade delete all data
+   
+4. GET /api/v1/users/{user_id}
+   - Get user by ID (requires JWT, admin or self only)
+
+UPDATE EXISTING ENDPOINTS:
+- Modify Phase 2 user endpoints to REQUIRE JWT authentication
+- Change from /api/v1/users/{user_id}/plans to /api/v1/users/me/plans
+- Use get_current_user dependency to enforce authentication
+- Maintain backward compatibility temporarily with optional auth
+
+SECURITY IMPLEMENTATION:
+- JWT tokens: Access (15min) + Refresh (30 days)
+- Telegram auth: Verify data hash using HMAC-SHA256(data, SHA256(bot_token))
+- SMS/Email codes: 6-digit numeric, rate-limited (max 3 per hour)
+- Google OAuth: Use google-auth library, verify ID token
+- Password hashing: bcrypt via passlib
+- Rate limiting: 5 login attempts per minute per IP
+- CORS: Whitelist frontend origins
+- Prevent account enumeration: same response for existing/non-existing users
+
+THIRD-PARTY INTEGRATIONS:
+- Telegram Bot API: Verify Telegram login data
+- Twilio/AWS SNS: Send SMS verification codes
+- SendGrid/AWS SES: Send email verification codes
+- Google OAuth 2.0: Google sign-in flow
+- Store all API keys in environment variables
+
+ENVIRONMENT VARIABLES (.env):
+- JWT_SECRET_KEY, JWT_REFRESH_SECRET_KEY, JWT_ALGORITHM
+- TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_USERNAME
+- TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER
+- SENDGRID_API_KEY, EMAIL_FROM_ADDRESS, EMAIL_FROM_NAME
+- GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI
+
+=== PART 2: ADVANCED MULTI-AGENT AI SYSTEM ===
 
 NEW DEPENDENCIES:
 Add to requirements.txt:
@@ -818,19 +884,40 @@ DOCUMENTATION:
 ```
 
 ### Phase 4 Deliverables
-✅ Multiple specialized AI agents functional  
-✅ Multi-agent orchestration with LangGraph  
-✅ Automated workout plan generation  
-✅ Injury prevention and safety checks  
-✅ Nutrition guidance integration  
-✅ Motivation and coaching features  
-✅ Agent feedback and learning system  
-✅ All advanced AI endpoints tested  
-✅ **Frontend Integration Test**: Generate full plan, get safety checks, receive nutrition advice, use motivation coach from `/MovoAI/`
+✅ **AUTHENTICATION (PRIORITY)**:
+  - Multi-provider authentication (Telegram, SMS, Email, Google)
+  - JWT access & refresh token mechanism
+  - User can link multiple auth methods to one account
+  - Verification code system for SMS/Email
+  - Account migration from anonymous to authenticated
+  - All user data now secured behind authentication
+✅ **ADVANCED AI**:
+  - Multiple specialized AI agents functional
+  - Multi-agent orchestration with LangGraph
+  - Automated workout plan generation
+  - Injury prevention and safety checks
+  - Nutrition guidance integration
+  - Motivation and coaching features
+  - Agent feedback and learning system
+✅ All endpoints tested with pytest
+✅ **Frontend Integration Test**: Full auth flow, migrate account, use advanced AI features from `/MovoAI/`
 
 ### Frontend Testing Checklist Phase 4
+**Authentication:**
+- [ ] User can login via Telegram (Telegram WebApp auto-login)
+- [ ] User can login via SMS code
+- [ ] User can login via Email code
+- [ ] User can login via Google OAuth
+- [ ] User can link additional auth methods to account
+- [ ] User can set primary auth method
+- [ ] User can unlink auth methods (keeping at least one)
+- [ ] User can migrate anonymous account data after login
+- [ ] Access token expires and refreshes correctly
+- [ ] Rate limiting works (code sending, login attempts)
+
+**Advanced AI:**
 - [ ] User can generate complete workout plan via AI
-- [ ] Generated plan appears in user's plans
+- [ ] Generated plan appears in user's secured plans
 - [ ] User receives injury prevention warnings
 - [ ] Nutrition guidance is accessible and helpful
 - [ ] Motivation coach provides timely encouragement

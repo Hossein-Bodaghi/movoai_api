@@ -18,7 +18,7 @@ class WorkoutPlan(Base):
     name_fr = Column(String(100), nullable=True)
     description_fr = Column(Text, nullable=True)
     is_template = Column(Boolean, default=False)
-    created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_by_user_id = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships
@@ -75,7 +75,7 @@ class UserPlan(Base):
     __tablename__ = "user_plans"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
     plan_id = Column(Integer, ForeignKey("workout_plans.id", ondelete="CASCADE"))
     start_date = Column(DateTime(timezone=True), nullable=True)
     status = Column(String(20), default='active')
@@ -90,7 +90,7 @@ class UserWorkoutLog(Base):
     __tablename__ = "user_workout_logs"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
     plan_exercise_id = Column(Integer, ForeignKey("plan_exercises.id", ondelete="CASCADE"))
     date_performed = Column(DateTime(timezone=True), nullable=True)
     sets_completed = Column(Integer, nullable=True)

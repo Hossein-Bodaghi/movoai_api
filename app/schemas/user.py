@@ -37,11 +37,22 @@ class UserUpdate(BaseModel):
     workout_style: Optional[str] = None
 
 
-class UserResponse(UserBase):
+class UserResponse(BaseModel):
     """Schema for user response"""
-    id: int
+    id: int  # Will map to user_id via property
+    user_id: int
+    email: Optional[str] = None
     telegram_id: Optional[int] = None
-    created_at: datetime
+    age: Optional[int] = None
+    weight: Optional[float] = None
+    height: Optional[float] = None
+    gender: Optional[str] = None
+    focus: Optional[str] = None
+    physical_fitness: Optional[str] = None
+    fitness_days: Optional[int] = None
+    credits: Optional[int] = 0
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     
     model_config = ConfigDict(from_attributes=True)
 
