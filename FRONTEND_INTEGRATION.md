@@ -73,6 +73,57 @@ localStorage.setItem('refresh_token', data.refresh_token);
 
 ---
 
+## User Endpoints
+
+### Get Profile
+```javascript
+GET /api/v1/users/me
+// Returns full user profile
+```
+
+### Update Profile
+```javascript
+PUT /api/v1/users/me
+Body: {
+  // Basic
+  "age": 25,
+  "weight": 70,
+  "height": 175,
+  "gender": "male",
+  
+  // Fitness
+  "focus": "performance_enhancement",
+  "physical_fitness": "intermediate",
+  "fitness_days": 5,
+  
+  // Sport
+  "sport": "running",
+  "sport_days": 3,
+  "specialized_sport": "marathon",
+  
+  // Training
+  "training_location": "gym",
+  "workout_limitations": "knee injury",
+  
+  // Nutrition
+  "dietary_restrictions": "lactose intolerant",
+  "cooking_time": "30_60",
+  "cooking_skill": "intermediate",
+  "kitchen_appliances": "oven,microwave",
+  "food_preferences": "chicken,rice",
+  "forbidden_ingredients": "dairy,nuts"
+}
+// All fields are optional
+```
+
+### Delete Account
+```javascript
+DELETE /api/v1/users/me
+// Permanently deletes user account
+```
+
+---
+
 ## Key Points
 
 - **Tokens**: Access (15min), Refresh (30 days), Login (5min, single-use)
