@@ -150,23 +150,37 @@ def validate_telegram_webapp_data(init_data: str, bot_token: str) -> bool:
     https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
     """
     try:
+        print(f"DEBUG: Validating init_data: {init_data[:100]}...")  # Log first 100 chars
+        
         # Parse init_data
         params = dict(param.split('=', 1) for param in init_data.split('&'))
         
+        # URL-decode the values
+        for key in params:
+            params[key] = urllib.parse.unquote(params[key])
+        
         if 'hash' not in params:
+            print("DEBUG: No hash in params")
             return False
         
         received_hash = params.pop('hash')
+        print(f"DEBUG: Received hash: {received_hash}")
         
         # Create data-check-string
         data_check_string = '\n'.join(f"{k}={v}" for k, v in sorted(params.items()))
+        print(f"DEBUG: Data check string: {data_check_string[:200]}...")
         
         # Calculate hash
         secret_key = hmac.new("WebAppData".encode(), bot_token.encode(), hashlib.sha256).digest()
         calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+        print(f"DEBUG: Calculated hash: {calculated_hash}")
         
-        return calculated_hash == received_hash
-    except Exception:
+        result = calculated_hash == received_hash
+        print(f"DEBUG: Hash match: {result}")
+        
+        return result
+    except Exception as e:
+        print(f"DEBUG: Exception in validation: {e}")
         return False
 
 
