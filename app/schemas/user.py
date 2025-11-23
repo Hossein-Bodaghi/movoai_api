@@ -75,9 +75,9 @@ class UserUpdate(BaseModel):
     dietary_restrictions: Optional[str] = None
     cooking_time: Optional[str] = Field(None, pattern="^(under_15|15_30|30_60|over_60)$")
     cooking_skill: Optional[str] = Field(None, pattern="^(beginner|intermediate|advanced)$")
-    kitchen_appliances: Optional[str] = None  # JSON string or comma-separated
-    food_preferences: Optional[str] = None  # JSON string or comma-separated
-    forbidden_ingredients: Optional[str] = None  # JSON string or comma-separated
+    kitchen_appliances: Optional[List[str]] = None
+    food_preferences: Optional[List[str]] = None
+    forbidden_ingredients: Optional[List[str]] = None
 
 
 class UserResponse(BaseModel):
@@ -115,9 +115,9 @@ class UserResponse(BaseModel):
     dietary_restrictions: Optional[str] = None
     cooking_time: Optional[str] = None
     cooking_skill: Optional[str] = None
-    kitchen_appliances: Optional[str] = None
-    food_preferences: Optional[str] = None
-    forbidden_ingredients: Optional[str] = None
+    kitchen_appliances: Optional[List[str]] = None
+    food_preferences: Optional[List[str]] = None
+    forbidden_ingredients: Optional[List[str]] = None
     
     # System fields
     credits: Optional[int] = 0

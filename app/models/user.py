@@ -47,9 +47,9 @@ class User(Base):
     dietary_restrictions = Column(Text, nullable=True)
     cooking_time = Column(String(50), nullable=True)
     cooking_skill = Column(String(50), nullable=True)
-    kitchen_appliances = Column(Text, nullable=True)
-    food_preferences = Column(Text, nullable=True)
-    forbidden_ingredients = Column(Text, nullable=True)
+    kitchen_appliances = Column(ARRAY(Text), nullable=True)
+    food_preferences = Column(ARRAY(Text), nullable=True)
+    forbidden_ingredients = Column(ARRAY(Text), nullable=True)
     
     # Credits and referrals
     credits = Column(Integer, default=0, nullable=False)
