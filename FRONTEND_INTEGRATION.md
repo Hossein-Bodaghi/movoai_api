@@ -108,14 +108,14 @@ DELETE /api/v1/users/me
 ### List Workout Goals
 ```javascript
 GET /api/v1/goals/workout?focus=performance_enhancement
-// Returns: [{ workout_goal_id, focus, goal_key, goal_label_en, goal_label_fa, description }]
+// Returns: [{ workout_goal_id, focus, goal_key, goal_label_en, goal_label_fa, description_en, description_fa }]
 // focus filter optional: performance_enhancement, body_recomposition, efficiency, rebuilding_rehab
 ```
 
 ### List Nutrition Goals
 ```javascript
 GET /api/v1/goals/nutrition?focus=body_recomposition
-// Returns: [{ nutrition_goal_id, focus, goal_key, goal_label_en, goal_label_fa, description }]
+// Returns: [{ nutrition_goal_id, focus, goal_key, goal_label_en, goal_label_fa, description_en, description_fa }]
 ```
 
 ### Get Specific Goal

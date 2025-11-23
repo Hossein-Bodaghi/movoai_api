@@ -12,7 +12,8 @@ class WorkoutGoalBase(BaseModel):
     goal_key: str
     goal_label_en: str
     goal_label_fa: Optional[str] = None
-    description: Optional[str] = None
+    description_en: Optional[str] = None
+    description_fa: Optional[str] = None
 
 
 class WorkoutGoalResponse(WorkoutGoalBase):
@@ -29,7 +30,8 @@ class NutritionGoalBase(BaseModel):
     goal_key: str
     goal_label_en: str
     goal_label_fa: Optional[str] = None
-    description: Optional[str] = None
+    description_en: Optional[str] = None
+    description_fa: Optional[str] = None
 
 
 class NutritionGoalResponse(NutritionGoalBase):

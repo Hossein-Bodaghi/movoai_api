@@ -17,7 +17,8 @@ class WorkoutGoal(Base):
     goal_key = Column(String(100), unique=True, nullable=False, index=True)
     goal_label_en = Column(String(255), nullable=False)
     goal_label_fa = Column(String(255), nullable=True)
-    description = Column(Text, nullable=True)
+    description_en = Column(Text, nullable=True)
+    description_fa = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     
     # Relationships
