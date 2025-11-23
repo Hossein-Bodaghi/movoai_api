@@ -64,6 +64,8 @@ class User(Base):
     auth_methods = relationship("UserAuthMethod", back_populates="user", cascade="all, delete-orphan", foreign_keys="[UserAuthMethod.user_id]")
     workout_goal = relationship("WorkoutGoal", back_populates="users", foreign_keys=[workout_goal_id])
     nutrition_goal = relationship("NutritionGoal", back_populates="users", foreign_keys=[nutrition_goal_id])
+    workout_plans = relationship("WorkoutPlan", back_populates="user", cascade="all, delete-orphan")
+    nutrition_plans = relationship("NutritionPlan", back_populates="user", cascade="all, delete-orphan")
     
     # Property for backward compatibility
     @property
