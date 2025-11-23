@@ -113,8 +113,8 @@ class NutritionPlanResponse(NutritionPlanBase):
     user_id: int
     current_week: int
     completed_weeks: List[int] = []
-    strategy: Optional[Dict[str, Any]] = None
-    expectations: Optional[Dict[str, Any]] = None
+    strategy: Optional[str] = None
+    expectations: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     

@@ -1,9 +1,53 @@
 """
 Exercise model - references the exercise table from the database
 """
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, ARRAY
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, ARRAY, Table
 from sqlalchemy.orm import relationship
 from app.database.base import Base
+
+
+# Lookup tables
+class Difficulty(Base):
+    """Difficulty levels for exercises"""
+    __tablename__ = "difficulty"
+    
+    difficulty_id = Column(Integer, primary_key=True)
+    name_en = Column(String(100), unique=True, nullable=False)
+    name_fa = Column(String(100), nullable=False)
+
+
+class Equipment(Base):
+    """Equipment types for exercises"""
+    __tablename__ = "equipment"
+    
+    equipment_id = Column(Integer, primary_key=True)
+    name_en = Column(String(100), unique=True, nullable=False)
+    name_fa = Column(String(100), nullable=False)
+
+
+class Muscle(Base):
+    """Muscle groups for exercises"""
+    __tablename__ = "muscle"
+    
+    muscle_id = Column(Integer, primary_key=True)
+    name_en = Column(String(100), unique=True, nullable=False)
+    name_fa = Column(String(100), nullable=False)
+
+
+# Junction tables (existing in DB)
+exercise_equipment = Table(
+    'exercise_equipment',
+    Base.metadata,
+    Column('exercise_id', Integer, ForeignKey('exercise.exercise_id', ondelete='CASCADE'), primary_key=True),
+    Column('equipment_id', Integer, ForeignKey('equipment.equipment_id', ondelete='CASCADE'), primary_key=True)
+)
+
+exercise_muscle = Table(
+    'exercise_muscle',
+    Base.metadata,
+    Column('exercise_id', Integer, ForeignKey('exercise.exercise_id', ondelete='CASCADE'), primary_key=True),
+    Column('muscle_id', Integer, ForeignKey('muscle.muscle_id', ondelete='CASCADE'), primary_key=True)
+)
 
 
 class Exercise(Base):
@@ -27,6 +71,7 @@ class Exercise(Base):
     male_image_urls = Column(ARRAY(Text))
     female_image_urls = Column(ARRAY(Text))
     
-    # Relationships (basic - can be extended)
-    # difficulty = relationship("Difficulty")
-    # style = relationship("Style")
+    # Relationships
+    difficulty = relationship("Difficulty")
+    equipment = relationship("Equipment", secondary=exercise_equipment, lazy="joined")
+    muscles = relationship("Muscle", secondary=exercise_muscle, lazy="joined")

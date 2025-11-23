@@ -133,9 +133,10 @@ GET /api/v1/goals/nutrition/{id}
 ### Create Plan
 ```javascript
 POST /api/v1/workout-plans
-Body: { "name": "12-Week Program", "workout_goal_id": 1, "total_weeks": 12 }
+Body: { "name": "برنامه تمرینی شخصی", "workout_goal_id": 1, "total_weeks": 12 }
 // total_weeks: 1, 4, or 12
-// Returns: Complete plan with all weeks/days/exercises + AI strategy/expectations
+// Returns: Complete plan with all weeks/days/exercises
+// strategy & expectations are plain text strings (Persian)
 ```
 
 ### List Plans
@@ -181,8 +182,13 @@ DELETE /api/v1/workout-plans/{plan_id}
 ### Create Plan
 ```javascript
 POST /api/v1/nutrition-plans
-Body: { "name": "4-Week Clean Eating", "nutrition_goal_id": 5, "total_weeks": 4 }
-// Returns: Complete plan with all weeks/days/meals + AI strategy/expectations
+Body: { "name": "برنامه غذایی شخصی", "nutrition_goal_id": 5, "total_weeks": 4 }
+// total_weeks: 1, 4, or 12
+// Returns: Complete plan with all weeks/days/meals
+// strategy & expectations are plain text strings (Persian)
+// Week titles/descriptions are in Persian
+// Day names are in Persian (شنبه, یکشنبه, دوشنبه, etc.)
+// Meals are in Persian with calorie info (protein/carbs/fats are null)
 ```
 
 ### List Plans
@@ -193,13 +199,15 @@ GET /api/v1/nutrition-plans
 ### Get Plan Details
 ```javascript
 GET /api/v1/nutrition-plans/{plan_id}
-// Returns: Full nested structure (weeks → days → meals with macros)
+// Returns: Full nested structure (weeks → days → meals)
+// Note: protein/carbs/fats are null in current implementation
 ```
 
 ### Get Specific Week
 ```javascript
 GET /api/v1/nutrition-plans/{plan_id}/week/{week_number}
-// Returns: 7 days × 4 meals with calories/protein/carbs/fats
+// Returns: 7 days (Persian names) × 4 meals (breakfast/lunch/dinner/snacks)
+// Each meal has: name, description, calories (protein/carbs/fats are null)
 ```
 
 ### Update Plan
@@ -226,16 +234,33 @@ DELETE /api/v1/nutrition-plans/{plan_id}
 ### Workout Plan
 ```javascript
 {
-  "plan_id": 1, "name": "Strength Program", "total_weeks": 12, "current_week": 1,
-  "completed_weeks": [], "strategy": {...}, "expectations": {...},
+  "plan_id": 1, "name": "برنامه تمرینی شخصی", "total_weeks": 12, "current_week": 1,
+  "completed_weeks": [],
+  "strategy": "این برنامه تمرینی بر اساس اطلاعات پروفایل شما طراحی شده است. رویکرد این برنامه ترکیبی از تمرینات قدرتی و هوازی است که به صورت پیشرونده شدت پیدا می‌کند...",
+  "expectations": "در پایان این برنامه، انتظار می‌رود که افزایش ۵-۸ کیلوگرم عضله خالص داشته باشید. همچنین قدرت شما در حرکات اصلی مانند اسکوات، بنچ پرس و ددلیفت به طور قابل توجهی افزایش خواهد یافت...",
   "weeks": [{
-    "week_number": 1, "title": "Week 1: Foundation",
+    "week_number": 1,
+    "title": "ساختن پایه و آشنایی با تمرینات",
+    "description": "در هفته اول، تمرکز ما بر روی یادگیری فرم صحیح حرکات و آماده‌سازی بدن برای تمرینات سنگین‌تر است...",
     "days": [{
-      "day_name": "Monday", "focus": "Upper Body",
+      "day_name": "شنبه",
+      "focus": "سینه و سه‌سر",
       "exercises": [{
         "exercise_id": 42, "sets": "4", "reps": "10", "tempo": "2-0-2-0",
-        "rest": "75 seconds", "exercise_order": 1,
-        "exercise": { "name_en": "Bench Press", "name_fa": "..." }
+        "rest": "75 ثانیه", "exercise_order": 1,
+        "exercise": {
+          "name_en": "Bench Press",
+          "name_fa": "پرس سینه با بار آزاد",
+          "difficulty": { "difficulty_id": 2, "name_fa": "متوسط" },
+          "instructions_fa": ["مرحله 1: روی نیمکت دراز بکشید", "مرحله 2: هالتر را بگیرید"],
+          "male_urls": ["https://example.com/video1.mp4"],
+          "male_image_urls": ["https://example.com/image1.jpg"],
+          "equipment": [{ "equipment_id": 5, "name_fa": "هالتر" }],
+          "muscles": [
+            { "muscle_id": 12, "name_fa": "سینه" },
+            { "muscle_id": 8, "name_fa": "سه سر بازو" }
+          ]
+        }
       }]
     }]
   }]
@@ -245,15 +270,24 @@ DELETE /api/v1/nutrition-plans/{plan_id}
 ### Nutrition Plan
 ```javascript
 {
-  "plan_id": 1, "name": "Clean Eating", "total_weeks": 4,
-  "strategy": { "calorie_target": 2450, "macro_split": {...} },
+  "plan_id": 1, "name": "برنامه غذایی شخصی", "total_weeks": 4,
+  "strategy": "این برنامه غذایی بر اساس نیازهای کالری و اهداف شما طراحی شده است. استراتژی این برنامه تنظیم ماکروها به صورت متعادل و استفاده از منابع غذایی تمیز است...",
+  "expectations": "با پیروی از این برنامه غذایی، انتظار می‌رود در ۱۲ هفته بین ۶ تا ۱۰ کیلوگرم کاهش وزن داشته باشید (بسته به وزن اولیه). افزایش انرژی و بهبود کیفیت خواب از هفته اول محسوس خواهد بود...",
   "weeks": [{
     "week_number": 1,
+    "title": "شروع سفر تغذیه سالم",
+    "description": "هفته اول درباره عادت کردن به برنامه جدید است. **تمرکز غذایی:** آشنایی با اندازه پورشن‌ها و تنظیم کالری روزانه...",
     "days": [{
-      "day_name": "Monday", "daily_calories": 2450,
+      "day_name": "شنبه",
+      "daily_calories": 2050,
       "meals": [{
-        "meal_type": "breakfast", "name": "Greek Yogurt Parfait",
-        "calories": 613, "protein": 45.9, "carbs": 61.3, "fats": 20.4
+        "meal_type": "breakfast",
+        "name": "املت گوجه و قارچ",
+        "description": "سه عدد تخم‌مرغ را با گوجه فرنگی خرد شده و قارچ تفت داده شده مخلوط کرده و در تابه بپزید...",
+        "calories": 450,
+        "protein": null,
+        "carbs": null,
+        "fats": null
       }]
     }]
   }]
@@ -270,5 +304,17 @@ DELETE /api/v1/nutrition-plans/{plan_id}
 - **Bot**: `@MovoKioBot` - user sends `/login` to get code
 - **Plans**: Create once, AI generates all content (weeks/days/exercises/meals)
 - **Progress**: Track via `current_week` and `completed_weeks[]`
+- **Language**: All mock data is in Persian (Farsi)
+  - Workout: Persian day names (شنبه-جمعه), week titles/descriptions
+  - Nutrition: Persian day names, meal names, Persian week titles/descriptions
+  - Strategy & Expectations: Plain text strings (not objects with title/description)
+- **Exercise Data**: Each exercise includes:
+  - `name_fa`: Persian name
+  - `difficulty`: Object with `name_fa` (difficulty in Persian)
+  - `instructions_fa`: Array of instruction steps in Persian
+  - `male_urls`: Array of video URLs for male demonstration
+  - `male_image_urls`: Array of image URLs for male demonstration
+  - `equipment`: Array of equipment objects with `name_fa`
+  - `muscles`: Array of muscle objects with `name_fa`
 
 See `examples/telegram_login.html` for working example.

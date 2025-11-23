@@ -29,49 +29,14 @@ router = APIRouter()
 
 # ========== Mock AI Generation Functions ==========
 
-def generate_mock_strategy(user: User, workout_goal: WorkoutGoal, total_weeks: int) -> dict:
+def generate_mock_strategy(user: User, workout_goal: WorkoutGoal, total_weeks: int) -> str:
     """Generate mock AI strategy for workout plan"""
-    return {
-        "focus": workout_goal.focus if workout_goal else "general_fitness",
-        "goal": workout_goal.goal_label_en if workout_goal else "General Fitness",
-        "approach": "Progressive overload with periodization",
-        "phases": [
-            {"week": "1-2", "phase": "Foundation", "focus": "Form and technique"},
-            {"week": "3-6", "phase": "Building", "focus": "Strength and endurance"},
-            {"week": "7-12", "phase": "Peak", "focus": "Maximum performance"}
-        ][:total_weeks//4 + 1] if total_weeks > 1 else [{"week": "1", "phase": "Intro", "focus": "Full body workout"}],
-        "training_days_per_week": user.fitness_days or 3,
-        "session_duration": "45-60 minutes",
-        "notes": "This is a mock strategy. Real AI will generate personalized strategy based on user profile."
-    }
+    return "این برنامه تمرینی بر اساس اطلاعات پروفایل شما طراحی شده است. رویکرد این برنامه ترکیبی از تمرینات قدرتی و هوازی است که به صورت پیشرونده شدت پیدا می‌کند. در هفته‌های اول، تمرکز بر ساختن پایه و تکنیک صحیح است. از هفته پنجم به بعد، حجم و شدت تمرینات افزایش می‌یابد. برنامه شامل روزهای ریکاوری فعال برای جلوگیری از اورترینینگ می‌باشد."
 
 
-def generate_mock_expectations(total_weeks: int) -> dict:
+def generate_mock_expectations(total_weeks: int) -> str:
     """Generate mock AI expectations for workout plan"""
-    if total_weeks == 1:
-        return {
-            "strength_gain": "5-10%",
-            "endurance_improvement": "Initial adaptation",
-            "skill_development": "Learn proper form",
-            "notes": "Mock expectations - AI will generate realistic expectations based on user fitness level"
-        }
-    elif total_weeks == 4:
-        return {
-            "strength_gain": "10-15%",
-            "endurance_improvement": "Moderate improvement",
-            "muscle_gain": "1-2 lbs",
-            "skill_development": "Solid technique foundation",
-            "notes": "Mock expectations - AI will generate realistic expectations based on user fitness level"
-        }
-    else:  # 12 weeks
-        return {
-            "strength_gain": "20-30%",
-            "endurance_improvement": "Significant improvement",
-            "muscle_gain": "4-8 lbs",
-            "body_composition": "2-4% body fat reduction",
-            "skill_development": "Advanced technique mastery",
-            "notes": "Mock expectations - AI will generate realistic expectations based on user fitness level"
-        }
+    return "در پایان این برنامه، انتظار می‌رود که افزایش ۵-۸ کیلوگرم عضله خالص داشته باشید. همچنین قدرت شما در حرکات اصلی مانند اسکوات، بنچ پرس و ددلیفت به طور قابل توجهی افزایش خواهد یافت. در ۴ هفته اول تغییرات ظاهری محسوس نخواهد بود، اما از هفته ۵ به بعد تفاوت‌ها مشهود می‌شوند."
 
 
 def get_random_exercises(db: Session, count: int, user_location: str = None) -> List[int]:
@@ -98,20 +63,38 @@ def generate_mock_workout_week(
     week_number: int,
     user: User
 ) -> WorkoutWeek:
-    """Generate a mock workout week with exercises"""
+    """Generate a mock workout week with exercises using Persian data"""
+    
+    # Persian week data
+    workout_week_data = [
+        {"week": 1, "title": "ساختن پایه و آشنایی با تمرینات", "description": "در هفته اول، تمرکز ما بر روی یادگیری فرم صحیح حرکات و آماده‌سازی بدن برای تمرینات سنگین‌تر است. **تمرکز تمرین:** حرکات پایه‌ای با وزن متوسط برای ایجاد پایه عضلانی قوی. **تمرکز تغذیه:** تنظیم کالری و ماکروها بر اساس هدف شما."},
+        {"week": 2, "title": "افزایش حجم و شدت تمرینات", "description": "در هفته دوم، حجم تمرینات را افزایش می‌دهیم تا عضلات بیشتر تحریک شوند. **تمرکز تمرین:** افزایش تعداد ست‌ها و کاهش زمان استراحت بین ست‌ها. **تمرکز تغذیه:** افزایش پروتئین برای بهبود عضلات."},
+        {"week": 3, "title": "افزایش شدت و مقاومت در برابر استرس", "description": "در فاز نهایی، ما شدت را به سیستم اضافه می‌کنیم تا بدن شما را به یک ماشین چربی‌سوز کارآمد تبدیل کنیم. **تمرکز تمرین:** معرفی پروتکل‌های متابولیک شدیدتر. **تمرکز تغذیه:** بهینه‌سازی خواب و مدیریت استرس."},
+        {"week": 4, "title": "ریکاوری فعال و بازسازی عضلانی", "description": "هفته چهارم زمان استراحت فعال است. **تمرکز تمرین:** کاهش شدت و تمرکز بر حرکات کششی و موبیلیتی. **تمرکز تغذیه:** تامین ریز مغذی‌ها و هیدراتاسیون."},
+        {"week": 5, "title": "معرفی برنامه تفکیکی پیشرفته", "description": "با ورود به هفته پنجم، برنامه تفکیکی را شروع می‌کنیم. **تمرکز تمرین:** تمرینات جداگانه برای هر گروه عضلانی. **تمرکز تغذیه:** تایمینگ وعده‌ها بر اساس زمان تمرین."},
+        {"week": 6, "title": "افزایش حجم و تحریک عمیق عضلانی", "description": "هفته ششم با افزایش حجم تمرینات همراه است. **تمرکز تمرین:** افزایش تعداد ست‌ها و تکرارها. **تمرکز تغذیه:** افزایش کالری برای رشد عضلانی."},
+        {"week": 7, "title": "ادغام تمرینات هوازی و قدرتی", "description": "ترکیب تمرینات هوازی و مقاومتی. **تمرکز تمرین:** سرکیت ترینینگ. **تمرکز تغذیه:** مدیریت کربوهیدرات‌ها."},
+        {"week": 8, "title": "تمرکز بر قدرت و حداکثر توان", "description": "هفته هشتم بر افزایش قدرت متمرکز است. **تمرکز تمرین:** کاهش تکرارها و افزایش وزنه. **تمرکز تغذیه:** افزایش کراتین."},
+        {"week": 9, "title": "مرحله استقامت و ظرفیت کاری", "description": "تمرکز بر بهبود استقامت عضلانی. **تمرکز تمرین:** افزایش تکرارها. **تمرکز تغذیه:** هیدراتاسیون."},
+        {"week": 10, "title": "آمادگی برای هفته اوج", "description": "آماده‌سازی برای بهترین عملکرد. **تمرکز تمرین:** تمرینات با شدت متوسط. **تمرکز تغذیه:** بهینه‌سازی گلیکوژن."},
+        {"week": 11, "title": "هفته اوج و حداکثر عملکرد", "description": "رسیدن به اوج آمادگی جسمانی. **تمرکز تمرین:** شدت بالا و حجم متوسط. **تمرکز تغذیه:** رژیم متعادل."},
+        {"week": 12, "title": "تثبیت نتایج و برنامه‌ریزی آینده", "description": "هفته نهایی برای تثبیت دستاوردها. **تمرکز تمرین:** حفظ سطح فعلی. **تمرکز تغذیه:** ایجاد عادات پایدار."}
+    ]
+    
+    week_data = workout_week_data[week_number - 1] if week_number <= len(workout_week_data) else workout_week_data[0]
     
     week = WorkoutWeek(
         plan_id=plan.plan_id,
         week_number=week_number,
-        title=f"Week {week_number}: Building Phase",
-        description=f"Mock week {week_number} - Focus on compound movements and progressive overload"
+        title=week_data["title"],
+        description=week_data["description"]
     )
     db.add(week)
     db.flush()  # Get week_id
     
     # Generate workout days based on user's fitness_days
     training_days = user.fitness_days or 3
-    day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    day_names = ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"]
     
     for i in range(training_days):
         day = WorkoutDay(

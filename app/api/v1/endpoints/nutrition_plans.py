@@ -29,54 +29,14 @@ router = APIRouter()
 
 # ========== Mock AI Generation Functions ==========
 
-def generate_mock_nutrition_strategy(user: User, nutrition_goal: NutritionGoal, total_weeks: int) -> dict:
+def generate_mock_nutrition_strategy(user: User, nutrition_goal: NutritionGoal, total_weeks: int) -> str:
     """Generate mock AI strategy for nutrition plan"""
-    # Convert Decimal to int/float to avoid JSON serialization issues
-    weight = int(user.weight) if user.weight else 70
-    age = int(user.age) if user.age else 30
-    
-    return {
-        "focus": nutrition_goal.focus if nutrition_goal else "balanced_nutrition",
-        "goal": nutrition_goal.goal_label_en if nutrition_goal else "Balanced Nutrition",
-        "approach": "Flexible dieting with macro tracking",
-        "calorie_target": 2000 + weight * 10 - age * 5,
-        "macro_split": {
-            "protein": "30%",
-            "carbs": "40%",
-            "fats": "30%"
-        },
-        "meal_frequency": "3 main meals + 1 snack",
-        "hydration": "8-10 glasses of water daily",
-        "notes": "This is a mock strategy. Real AI will generate personalized nutrition strategy based on user profile."
-    }
+    return "این برنامه غذایی بر اساس نیازهای کالری و اهداف شما طراحی شده است. استراتژی این برنامه تنظیم ماکروها به صورت متعادل و استفاده از منابع غذایی تمیز است. وعده‌های غذایی به گونه‌ای تنظیم شده‌اند که انرژی شما در طول روز ثابت بماند. برنامه شامل میان‌وعده‌های سالم برای جلوگیری از گرسنگی است."
 
 
-def generate_mock_nutrition_expectations(total_weeks: int) -> dict:
+def generate_mock_nutrition_expectations(total_weeks: int) -> str:
     """Generate mock AI expectations for nutrition plan"""
-    if total_weeks == 1:
-        return {
-            "weight_change": "Minimal (adaptation phase)",
-            "energy_levels": "Initial improvements",
-            "habit_formation": "Introduction to meal structure",
-            "notes": "Mock expectations - AI will generate realistic expectations based on user goals"
-        }
-    elif total_weeks == 4:
-        return {
-            "weight_change": "2-4 lbs (depending on goal)",
-            "energy_levels": "Significant improvement",
-            "habit_formation": "Solid meal prep routine",
-            "body_composition": "Initial changes visible",
-            "notes": "Mock expectations - AI will generate realistic expectations based on user goals"
-        }
-    else:  # 12 weeks
-        return {
-            "weight_change": "8-16 lbs (depending on goal)",
-            "energy_levels": "Optimal and consistent",
-            "habit_formation": "Sustainable lifestyle changes",
-            "body_composition": "Significant transformation",
-            "metabolic_adaptation": "Improved insulin sensitivity",
-            "notes": "Mock expectations - AI will generate realistic expectations based on user goals"
-        }
+    return "با پیروی از این برنامه غذایی، انتظار می‌رود در ۱۲ هفته بین ۶ تا ۱۰ کیلوگرم کاهش وزن داشته باشید (بسته به وزن اولیه). افزایش انرژی و بهبود کیفیت خواب از هفته اول محسوس خواهد بود. تغییرات ترکیب بدنی از هفته ۴ به بعد قابل مشاهده است. در پایان برنامه، عادات غذایی سالم‌تری خواهید داشت."
 
 
 def generate_mock_meals(meal_type: str, day_number: int, base_calories: int) -> dict:
@@ -138,13 +98,31 @@ def generate_mock_nutrition_week(
     week_number: int,
     user: User
 ) -> NutritionWeek:
-    """Generate a mock nutrition week with meals"""
+    """Generate a mock nutrition week with meals using Persian data"""
+    
+    # Persian week data
+    nutrition_week_data = [
+        {"week": 1, "title": "شروع سفر تغذیه سالم", "description": "هفته اول درباره عادت کردن به برنامه جدید است. **تمرکز غذایی:** آشنایی با اندازه پورشن‌ها و تنظیم کالری روزانه. **نکات کلیدی:** نوشیدن ۸-۱۰ لیوان آب و حذف تدریجی غذاهای فرآوری شده."},
+        {"week": 2, "title": "تنظیم ماکروها و میکروها", "description": "بهینه‌سازی نسبت پروتئین، کربوهیدرات و چربی. **تمرکز غذایی:** افزایش پروتئین به ۱.۸-۲.۲ گرم به ازای هر کیلوگرم وزن بدن. **نکات کلیدی:** اضافه کردن سبزیجات رنگارنگ به هر وعده."},
+        {"week": 3, "title": "کنترل اشتها و مدیریت گرسنگی", "description": "یادگیری تشخیص گرسنگی واقعی از گرسنگی احساسی. **تمرکز غذایی:** افزودن فیبر و پروتئین برای احساس سیری طولانی‌تر. **نکات کلیدی:** خوردن آهسته و لذت بردن از غذا."},
+        {"week": 4, "title": "بهینه‌سازی تایمینگ وعده‌ها", "description": "زمان‌بندی مناسب وعده‌ها برای انرژی بهتر. **تمرکز غذایی:** توزیع کالری در ۴-۵ وعده کوچک در طول روز. **نکات کلیدی:** وعده قبل و بعد از تمرین."},
+        {"week": 5, "title": "معرفی غذاهای جدید و متنوع", "description": "افزودن تنوع برای جلوگیری از خستگی برنامه. **تمرکز غذایی:** امتحان کردن منابع پروتئین و کربوهیدرات جدید. **نکات کلیدی:** آشنایی با سوپرفودها."},
+        {"week": 6, "title": "مدیریت میل به شیرینی", "description": "استراتژی‌های سالم برای کنترل میل به شیرینی. **تمرکز غذایی:** جایگزین‌های طبیعی و سالم برای دسرها. **نکات کلیدی:** استفاده از میوه‌ها و شیرین‌کننده‌های طبیعی."},
+        {"week": 7, "title": "تقویت سیستم ایمنی با تغذیه", "description": "انتخاب غذاهای تقویت‌کننده ایمنی. **تمرکز غذایی:** افزایش ویتامین C، D و روی. **نکات کلیدی:** مصرف پروبیوتیک‌ها برای سلامت روده."},
+        {"week": 8, "title": "برنامه‌ریزی وعده‌ها و Meal Prep", "description": "یادگیری آماده‌سازی وعده‌های هفتگی. **تمرکز غذایی:** پخت و نگهداری صحیح غذاها. **نکات کلیدی:** استفاده از ظروف مناسب و فریز کردن."},
+        {"week": 9, "title": "مدیریت تغذیه در مناسبت‌ها", "description": "حفظ برنامه در شرایط اجتماعی. **تمرکز غذایی:** استراتژی‌های هوشمندانه برای غذای بیرون. **نکات کلیدی:** تعادل بین لذت و سلامت."},
+        {"week": 10, "title": "هیدراتاسیون و نوشیدنی‌های سالم", "description": "اهمیت آب و مایعات مناسب. **تمرکز غذایی:** حذف نوشابه‌ها و نوشیدنی‌های قندی. **نکات کلیدی:** افزودن چای سبز و نوشیدنی‌های طبیعی."},
+        {"week": 11, "title": "بهینه‌سازی خواب با تغذیه", "description": "غذاهایی که به خواب بهتر کمک می‌کنند. **تمرکز غذایی:** منیزیم، تریپتوفان و کربوهیدرات‌های پیچیده. **نکات کلیدی:** زمان‌بندی شام و اجتناب از کافئین."},
+        {"week": 12, "title": "ایجاد سبک زندگی تغذیه‌ای پایدار", "description": "تبدیل عادات موقت به سبک زندگی. **تمرکز غذایی:** قانون ۸۰/۲۰ برای انعطاف‌پذیری. **نکات کلیدی:** برنامه‌ریزی برای حفظ نتایج در بلندمدت."}
+    ]
+    
+    week_data = nutrition_week_data[week_number - 1] if week_number <= len(nutrition_week_data) else nutrition_week_data[0]
     
     week = NutritionWeek(
         plan_id=plan.plan_id,
         week_number=week_number,
-        title=f"هفته {week_number}: تغذیه متعادل",
-        description=f"هفته {week_number} - تمرکز بر غذاهای کامل و تعادل مواد مغذی"
+        title=week_data["title"],
+        description=week_data["description"]
     )
     db.add(week)
     db.flush()  # Get week_id

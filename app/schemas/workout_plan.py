@@ -16,11 +16,41 @@ class ExerciseBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class DifficultyInfo(BaseModel):
+    """Difficulty information"""
+    difficulty_id: int
+    name_fa: str
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EquipmentInfo(BaseModel):
+    """Equipment information"""
+    equipment_id: int
+    name_fa: str
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class MuscleInfo(BaseModel):
+    """Muscle information"""
+    muscle_id: int
+    name_fa: str
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ExerciseInWorkout(BaseModel):
     """Exercise information within a workout day"""
     exercise_id: int
     name_en: str
     name_fa: Optional[str] = None
+    difficulty: Optional[DifficultyInfo] = None
+    instructions_fa: Optional[List[str]] = None
+    male_urls: Optional[List[str]] = None
+    male_image_urls: Optional[List[str]] = None
+    equipment: List[EquipmentInfo] = []
+    muscles: List[MuscleInfo] = []
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -132,8 +162,8 @@ class WorkoutPlanResponse(WorkoutPlanBase):
     user_id: int
     current_week: int
     completed_weeks: List[int] = []
-    strategy: Optional[Dict[str, Any]] = None
-    expectations: Optional[Dict[str, Any]] = None
+    strategy: Optional[str] = None
+    expectations: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     
