@@ -78,48 +78,50 @@ localStorage.setItem('refresh_token', data.refresh_token);
 ### Get Profile
 ```javascript
 GET /api/v1/users/me
-// Returns full user profile
+// Returns full user profile with workout_goal and nutrition_goal details
 ```
 
 ### Update Profile
 ```javascript
 PUT /api/v1/users/me
 Body: {
-  // Basic
-  "age": 25,
-  "weight": 70,
-  "height": 175,
-  "gender": "male",
-  
-  // Fitness
-  "focus": "performance_enhancement",
-  "physical_fitness": "intermediate",
-  "fitness_days": 5,
-  
-  // Sport
-  "sport": "running",
-  "sport_days": 3,
-  "specialized_sport": "marathon",
-  
-  // Training
-  "training_location": "gym",
-  "workout_limitations": "knee injury",
-  
-  // Nutrition
-  "dietary_restrictions": "lactose intolerant",
-  "cooking_time": "30_60",
-  "cooking_skill": "intermediate",
-  "kitchen_appliances": "oven,microwave",
-  "food_preferences": "chicken,rice",
-  "forbidden_ingredients": "dairy,nuts"
+  "age": 25, "weight": 70, "height": 175, "gender": "male",
+  "focus": "performance_enhancement", "physical_fitness": "intermediate", "fitness_days": 5,
+  "workout_goal_id": 1, "nutrition_goal_id": 5,
+  "sport": "running", "sport_days": 3, "specialized_sport": "marathon",
+  "training_location": "gym", "workout_limitations": "knee injury",
+  "dietary_restrictions": "lactose intolerant", "cooking_time": "30_60", "cooking_skill": "intermediate",
+  "kitchen_appliances": "oven,microwave", "food_preferences": "chicken,rice", "forbidden_ingredients": "dairy,nuts"
 }
-// All fields are optional
+// All fields optional
 ```
 
 ### Delete Account
 ```javascript
 DELETE /api/v1/users/me
-// Permanently deletes user account
+```
+
+---
+
+## Goal Endpoints
+
+### List Workout Goals
+```javascript
+GET /api/v1/goals/workout?focus=performance_enhancement
+// Returns: [{ workout_goal_id, focus, goal_key, goal_label_en, goal_label_fa, description }]
+// focus filter optional: performance_enhancement, body_recomposition, efficiency, rebuilding_rehab
+```
+
+### List Nutrition Goals
+```javascript
+GET /api/v1/goals/nutrition?focus=body_recomposition
+// Returns: [{ nutrition_goal_id, focus, goal_key, goal_label_en, goal_label_fa, description }]
+```
+
+### Get Specific Goal
+```javascript
+GET /api/v1/goals/workout/{id}
+GET /api/v1/goals/nutrition/{id}
 ```
 
 ---

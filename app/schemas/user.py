@@ -6,6 +6,29 @@ from typing import List, Optional
 from datetime import datetime
 
 
+# Import goal schemas for nested responses
+class WorkoutGoalNested(BaseModel):
+    """Nested workout goal in user response"""
+    workout_goal_id: int
+    goal_key: str
+    goal_label_en: str
+    goal_label_fa: Optional[str] = None
+    focus: str
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NutritionGoalNested(BaseModel):
+    """Nested nutrition goal in user response"""
+    nutrition_goal_id: int
+    goal_key: str
+    goal_label_en: str
+    goal_label_fa: Optional[str] = None
+    focus: str
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
 class UserBase(BaseModel):
     """Base user schema"""
     name: str = Field(..., min_length=1, max_length=200)
@@ -76,6 +99,8 @@ class UserResponse(BaseModel):
     fitness_days: Optional[int] = None
     workout_goal_id: Optional[int] = None
     nutrition_goal_id: Optional[int] = None
+    workout_goal: Optional[WorkoutGoalNested] = None
+    nutrition_goal: Optional[NutritionGoalNested] = None
     
     # Sport fields
     sport: Optional[str] = None

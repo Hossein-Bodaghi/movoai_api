@@ -20,11 +20,13 @@ async def get_current_user_profile(
     db: Session = Depends(get_db)
 ):
     """
-    Get current user profile with auth methods
+    Get current user profile with auth methods and goals
     """
-    # Reload user with auth methods
+    # Reload user with auth methods and goals
     user = db.query(User).options(
-        joinedload(User.auth_methods)
+        joinedload(User.auth_methods),
+        joinedload(User.workout_goal),
+        joinedload(User.nutrition_goal)
     ).filter(User.user_id == current_user.user_id).first()
     
     return UserWithAuthMethods.model_validate(user)

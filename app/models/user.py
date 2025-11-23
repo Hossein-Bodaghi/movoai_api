@@ -1,7 +1,7 @@
 """
 User model
 """
-from sqlalchemy import Column, Integer, BigInteger, String, Float, Boolean, ARRAY, DateTime, Text, Numeric
+from sqlalchemy import Column, Integer, BigInteger, String, Float, Boolean, ARRAY, DateTime, Text, Numeric, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
@@ -31,8 +31,8 @@ class User(Base):
     focus = Column(String(50), nullable=True)
     physical_fitness = Column(String(50), nullable=True)
     fitness_days = Column(Integer, nullable=True)
-    workout_goal_id = Column(Integer, nullable=True)
-    nutrition_goal_id = Column(Integer, nullable=True)
+    workout_goal_id = Column(Integer, ForeignKey('workout_goals.workout_goal_id', ondelete='SET NULL'), nullable=True)
+    nutrition_goal_id = Column(Integer, ForeignKey('nutrition_goals.nutrition_goal_id', ondelete='SET NULL'), nullable=True)
     
     # Sport fields
     sport = Column(String(100), nullable=True)
@@ -62,8 +62,8 @@ class User(Base):
     
     # Relationships
     auth_methods = relationship("UserAuthMethod", back_populates="user", cascade="all, delete-orphan", foreign_keys="[UserAuthMethod.user_id]")
-    user_plans = relationship("UserPlan", back_populates="user", cascade="all, delete-orphan", foreign_keys="[UserPlan.user_id]")
-    workout_logs = relationship("UserWorkoutLog", back_populates="user", cascade="all, delete-orphan", foreign_keys="[UserWorkoutLog.user_id]")
+    workout_goal = relationship("WorkoutGoal", back_populates="users", foreign_keys=[workout_goal_id])
+    nutrition_goal = relationship("NutritionGoal", back_populates="users", foreign_keys=[nutrition_goal_id])
     
     # Property for backward compatibility
     @property
