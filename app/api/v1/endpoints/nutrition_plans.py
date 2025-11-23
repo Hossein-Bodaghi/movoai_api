@@ -31,11 +31,15 @@ router = APIRouter()
 
 def generate_mock_nutrition_strategy(user: User, nutrition_goal: NutritionGoal, total_weeks: int) -> dict:
     """Generate mock AI strategy for nutrition plan"""
+    # Convert Decimal to int/float to avoid JSON serialization issues
+    weight = int(user.weight) if user.weight else 70
+    age = int(user.age) if user.age else 30
+    
     return {
         "focus": nutrition_goal.focus if nutrition_goal else "balanced_nutrition",
         "goal": nutrition_goal.goal_label_en if nutrition_goal else "Balanced Nutrition",
         "approach": "Flexible dieting with macro tracking",
-        "calorie_target": 2000 + (user.weight or 70) * 10 - (user.age or 30) * 5,
+        "calorie_target": 2000 + weight * 10 - age * 5,
         "macro_split": {
             "protein": "30%",
             "carbs": "40%",
@@ -76,56 +80,55 @@ def generate_mock_nutrition_expectations(total_weeks: int) -> dict:
 
 
 def generate_mock_meals(meal_type: str, day_number: int, base_calories: int) -> dict:
-    """Generate mock meal data"""
+    """Generate mock meal data in Persian format"""
+    # Persian meals based on user's example
     meals_database = {
         "breakfast": [
-            {"name": "Greek Yogurt Parfait", "desc": "Greek yogurt with berries, granola, and honey"},
-            {"name": "Protein Pancakes", "desc": "Whole grain pancakes with protein powder, topped with fruits"},
-            {"name": "Avocado Toast", "desc": "Whole grain toast with avocado, eggs, and tomatoes"},
-            {"name": "Oatmeal Bowl", "desc": "Steel-cut oats with banana, nuts, and cinnamon"},
-            {"name": "Scrambled Eggs", "desc": "Eggs with vegetables, whole grain toast, and avocado"}
+            {"name": "املت گوجه و قارچ", "desc": "سه عدد تخم‌مرغ را با گوجه فرنگی خرد شده و قارچ تفت داده شده مخلوط کرده و در تابه بپزید. همراه با یک کف دست نان سنگک میل شود.", "cal": 450},
+            {"name": "جو دوسر پرک با شیر و موز", "desc": "نصف لیوان جو دوسر پرک را با یک لیوان شیر روی حرارت ملایم بپزید. در انتها یک عدد موز خرد شده و کمی دارچین اضافه کنید.", "cal": 480},
+            {"name": "نان و پنیر و گردو", "desc": "دو کف دست نان سنگک همراه با ۴۰ گرم پنیر کم‌چرب، دو عدد گردو و خیار و گوجه.", "cal": 400},
+            {"name": "اسموتی پروتئینی", "desc": "یک لیوان شیر، یک عدد موز، یک قاشق کره بادام‌زمینی و نصف پیمانه جو دوسر پرک را در مخلوط‌کن ترکیب کنید.", "cal": 550},
+            {"name": "تخم‌مرغ آب‌پز و آووکادو", "desc": "دو عدد تخم‌مرغ آب‌پز همراه با نصف یک آووکادوی کوچک و یک تکه نان تست جو.", "cal": 450},
+            {"name": "فرنی جو دوسر", "desc": "نصف لیوان جو دوسر پرک را با یک لیوان شیر و یک قاشق عسل بپزید و با پودر دارچین میل کنید.", "cal": 480},
+            {"name": "نیمرو با نان تست", "desc": "دو عدد تخم‌مرغ را به صورت نیمرو درآورده و با دو تکه نان تست جو میل کنید.", "cal": 420}
         ],
         "lunch": [
-            {"name": "Grilled Chicken Salad", "desc": "Mixed greens with grilled chicken, quinoa, and vinaigrette"},
-            {"name": "Turkey Wrap", "desc": "Whole wheat wrap with turkey, vegetables, and hummus"},
-            {"name": "Salmon Bowl", "desc": "Grilled salmon with brown rice and roasted vegetables"},
-            {"name": "Chicken Stir-Fry", "desc": "Lean chicken with mixed vegetables and brown rice"},
-            {"name": "Mediterranean Bowl", "desc": "Chickpeas, quinoa, feta, vegetables with tahini dressing"}
+            {"name": "سینه مرغ گریل شده با برنج و سالاد", "desc": "۱۵۰ گرم سینه مرغ مزه‌دار شده را در تابه گریل یا سرخ کنید. همراه با یک لیوان برنج کته (پخته شده در پلوپز) و سالاد فصل سرو کنید.", "cal": 700},
+            {"name": "ماهی قزل‌آلا با سبزیجات", "desc": "یک فیله ماهی قزل‌آلا (حدود ۱۸۰ گرم) را با نمک، فلفل و آبلیمو مزه‌دار کرده و در تابه با کمی روغن بپزید. همراه با سبزیجات بخارپز (مثل کلم بروکلی و هویج) سرو کنید.", "cal": 700},
+            {"name": "کباب تابه‌ای با گوجه", "desc": "۱۵۰ گرم گوشت چرخ‌کرده کم‌چرب را با پیاز رنده شده مخلوط و در تابه سرخ کنید. همراه با گوجه کبابی و نصف لیوان برنج سرو شود.", "cal": 750},
+            {"name": "خوراک مرغ و سبزیجات", "desc": "۱۵۰ گرم سینه مرغ نگینی را با فلفل دلمه‌ای، قارچ و پیاز در تابه تفت دهید. همراه با یک کف دست نان میل کنید.", "cal": 700},
+            {"name": "استامبولی پلو با گوشت", "desc": "یک و نیم لیوان استامبولی پلو که با گوشت چرخ‌کرده کم‌چرب در پلوپز آماده شده، همراه با سالاد شیرازی.", "cal": 750},
+            {"name": "جوجه کباب تابه‌ای", "desc": "۱۸۰ گرم فیله مرغ خرد شده و زعفرانی را در تابه سرخ کنید. همراه با یک لیوان برنج و گوجه کبابی سرو شود.", "cal": 750}
         ],
         "dinner": [
-            {"name": "Grilled Steak", "desc": "Lean steak with sweet potato and steamed broccoli"},
-            {"name": "Baked Salmon", "desc": "Herb-crusted salmon with asparagus and quinoa"},
-            {"name": "Chicken Breast", "desc": "Grilled chicken with roasted vegetables and brown rice"},
-            {"name": "Turkey Meatballs", "desc": "Lean turkey meatballs with marinara and zucchini noodles"},
-            {"name": "Shrimp Bowl", "desc": "Garlic shrimp with cauliflower rice and mixed vegetables"}
+            {"name": "عدسی", "desc": "یک کاسه بزرگ عدسی که از قبل با پیاز داغ و ادویه پخته شده است. همراه با آبلیمو تازه و یک کف دست نان میل شود.", "cal": 600},
+            {"name": "سالاد مرغ و کاهو", "desc": "کاهو، خیار، گوجه و ۱۰۰ گرم مرغ پخته و خرد شده را با سس ماست و آبلیمو مخلوط کنید. همراه با یک تکه نان تست جو میل شود.", "cal": 600},
+            {"name": "سوپ جو و مرغ", "desc": "یک کاسه بزرگ سوپ جو که با تکه‌های سینه مرغ، هویج و جعفری پخته شده است. تهیه آن با جوی پرک بسیار سریع است.", "cal": 650},
+            {"name": "سالاد لوبیا و نخود", "desc": "مخلوطی از کاهو، یک لیوان حبوبات پخته (لوبیا و نخود)، ذرت، خیار و گوجه با سس روغن زیتون و آبلیمو.", "cal": 650},
+            {"name": "میرزاقاسمی", "desc": "ترکیبی از بادمجان کبابی، سیر، گوجه و دو عدد تخم‌مرغ. همراه با یک کف دست نان سنگک سرو شود.", "cal": 600},
+            {"name": "خوراک قارچ و اسفناج", "desc": "اسفناج و قارچ را با پیاز تفت داده و در انتها دو عدد تخم‌مرغ روی آن بشکنید. همراه با نان میل شود.", "cal": 550},
+            {"name": "کوکو سبزی", "desc": "دو برش متوسط کوکو سبزی که در تابه با روغن کم آماده شده است، همراه با نان و یک کاسه ماست و خیار.", "cal": 650}
         ],
         "snacks": [
-            {"name": "Protein Shake", "desc": "Whey protein with almond milk and banana"},
-            {"name": "Mixed Nuts", "desc": "Almonds, walnuts, and cashews (1 oz)"},
-            {"name": "Apple with Nut Butter", "desc": "Sliced apple with natural almond butter"},
-            {"name": "Greek Yogurt", "desc": "Plain Greek yogurt with berries"},
-            {"name": "Protein Bar", "desc": "High-protein, low-sugar nutrition bar"}
+            {"name": "ماست یونانی و گردو", "desc": "یک کاسه ماست یونانی کم‌چرب همراه با دو عدد گردوی خرد شده و یک قاشق چای‌خوری عسل.", "cal": 300},
+            {"name": "سیب و کره بادام زمینی", "desc": "یک عدد سیب متوسط را برش زده و با یک قاشق غذاخوری کره بادام زمینی میل کنید.", "cal": 250},
+            {"name": "میوه فصل", "desc": "یک عدد پرتقال یا دو عدد نارنگی.", "cal": 150},
+            {"name": "تخم‌مرغ آب‌پز", "desc": "دو عدد تخم‌مرغ کامل آب‌پز به عنوان میان‌وعده سرشار از پروتئین.", "cal": 160},
+            {"name": "یک مشت آجیل مخلوط", "desc": "حدود ۳۰ گرم مخلوط بادام، پسته و فندق خام و بدون نمک.", "cal": 250},
+            {"name": "شیک شیر و خرما", "desc": "یک لیوان شیر کم‌چرب را با سه عدد خرما و یک قاشق پودر کاکائو در مخلوط‌کن ترکیب کنید.", "cal": 300},
+            {"name": "دوغ و کشمش", "desc": "یک لیوان دوغ کم‌نمک و کم‌چرب همراه با یک مشت کوچک کشمش.", "cal": 200}
         ]
     }
     
     meal = random.choice(meals_database[meal_type])
     
-    # Calculate calories and macros based on meal type
-    calorie_split = {"breakfast": 0.25, "lunch": 0.35, "dinner": 0.30, "snacks": 0.10}
-    calories = int(base_calories * calorie_split[meal_type])
-    
-    # Rough macro calculation (protein: 4 cal/g, carbs: 4 cal/g, fats: 9 cal/g)
-    protein = round(calories * 0.30 / 4, 1)
-    carbs = round(calories * 0.40 / 4, 1)
-    fats = round(calories * 0.30 / 9, 1)
-    
     return {
         "name": meal["name"],
-        "description": meal["desc"] + " (Mock meal - AI will generate based on user preferences)",
-        "calories": calories,
-        "protein": protein,
-        "carbs": carbs,
-        "fats": fats
+        "description": meal["desc"],
+        "calories": meal["cal"],
+        "protein": None,  # Not included in user's format
+        "carbs": None,
+        "fats": None
     }
 
 
@@ -140,17 +143,19 @@ def generate_mock_nutrition_week(
     week = NutritionWeek(
         plan_id=plan.plan_id,
         week_number=week_number,
-        title=f"Week {week_number}: Balanced Nutrition",
-        description=f"Mock week {week_number} - Focus on whole foods and macro balance"
+        title=f"هفته {week_number}: تغذیه متعادل",
+        description=f"هفته {week_number} - تمرکز بر غذاهای کامل و تعادل مواد مغذی"
     )
     db.add(week)
     db.flush()  # Get week_id
     
-    # Calculate daily calorie target
-    base_calories = 2000 + int((user.weight or 70) * 10) - int((user.age or 30) * 5)
+    # Calculate daily calorie target - convert Decimal to int
+    weight = int(user.weight) if user.weight else 70
+    age = int(user.age) if user.age else 30
+    base_calories = 2000 + weight * 10 - age * 5
     
-    # Generate 7 days
-    day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    # Generate 7 days with Persian names
+    day_names = ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"]
     
     for day_name in day_names:
         day = NutritionDay(

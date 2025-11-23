@@ -30,7 +30,10 @@ class MealResponse(MealBase):
     day_id: int
     created_at: datetime
     
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={Decimal: float}
+    )
 
 
 # ========== Nutrition Day Schemas ==========
@@ -52,7 +55,10 @@ class NutritionDayResponse(NutritionDayBase):
     created_at: datetime
     meals: List[MealResponse] = []
     
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={Decimal: float}
+    )
 
 
 # ========== Nutrition Week Schemas ==========
@@ -75,7 +81,10 @@ class NutritionWeekResponse(NutritionWeekBase):
     created_at: datetime
     days: List[NutritionDayResponse] = []
     
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={Decimal: float}
+    )
 
 
 # ========== Nutrition Plan Schemas ==========
@@ -109,14 +118,20 @@ class NutritionPlanResponse(NutritionPlanBase):
     created_at: datetime
     updated_at: datetime
     
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={Decimal: float}
+    )
 
 
 class NutritionPlanDetailResponse(NutritionPlanResponse):
     """Schema for nutrition plan with full details including weeks"""
     weeks: List[NutritionWeekResponse] = []
     
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={Decimal: float}
+    )
 
 
 class NutritionPlanListResponse(BaseModel):
