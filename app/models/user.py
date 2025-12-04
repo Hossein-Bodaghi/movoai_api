@@ -4,8 +4,12 @@ User model
 from sqlalchemy import Column, Integer, BigInteger, String, Float, Boolean, ARRAY, DateTime, Text, Numeric, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
+from typing import TYPE_CHECKING
 
 from app.database.base import Base
+
+if TYPE_CHECKING:
+    from app.models.user_equipment import UserHomeEquipment, UserGymEquipment
 
 
 class User(Base):
@@ -77,11 +81,11 @@ class User(Base):
     # Property to transform home_equipment relationship for Pydantic
     @property
     def home_equipment(self):
-        """Return list of equipment objects for serialization"""
-        return [ue.equipment for ue in self.home_equipment_rel] if self.home_equipment_rel else []
+        """Return list of equipment IDs for serialization"""
+        return [ue.equipment_id for ue in self.home_equipment_rel] if self.home_equipment_rel else []
     
     # Property to transform gym_equipment relationship for Pydantic
     @property
     def gym_equipment(self):
-        """Return list of equipment objects for serialization"""
-        return [ue.equipment for ue in self.gym_equipment_rel] if self.gym_equipment_rel else []
+        """Return list of equipment IDs for serialization"""
+        return [ue.equipment_id for ue in self.gym_equipment_rel] if self.gym_equipment_rel else []

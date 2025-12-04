@@ -124,8 +124,8 @@ class UserResponse(BaseModel):
     forbidden_ingredients: Optional[List[str]] = None
     
     # Equipment fields
-    home_equipment: Optional[List["EquipmentInfo"]] = None
-    gym_equipment: Optional[List["EquipmentInfo"]] = None
+    home_equipment: Optional[List[int]] = None
+    gym_equipment: Optional[List[int]] = None
     
     # System fields
     credits: Optional[int] = 0
@@ -134,15 +134,6 @@ class UserResponse(BaseModel):
     
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-    
-    model_config = ConfigDict(from_attributes=True)
-
-
-class EquipmentInfo(BaseModel):
-    """Equipment information"""
-    equipment_id: int
-    name_en: str
-    name_fa: str
     
     model_config = ConfigDict(from_attributes=True)
 

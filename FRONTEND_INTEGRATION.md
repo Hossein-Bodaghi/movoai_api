@@ -79,8 +79,8 @@ localStorage.setItem('refresh_token', data.refresh_token);
 ```javascript
 GET /api/v1/users/me
 // Returns full user profile with workout_goal, nutrition_goal, home_equipment, and gym_equipment details
-// home_equipment is an array of equipment objects: [{ equipment_id, name_en, name_fa }]
-// gym_equipment is an array of equipment objects: [{ equipment_id, name_en, name_fa }]
+// home_equipment is an array of equipment IDs: [1, 5, 8, 12]
+// gym_equipment is an array of equipment IDs: [1, 3, 5, 8, 10, 15]
 ```
 
 ### Update Profile

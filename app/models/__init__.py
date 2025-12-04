@@ -9,6 +9,7 @@ from app.models.nutrition_goal import NutritionGoal
 from app.models.exercise import Exercise
 from app.models.workout_plan import WorkoutPlan, WorkoutWeek, WorkoutDay, WorkoutDayExercise
 from app.models.nutrition_plan import NutritionPlan, NutritionWeek, NutritionDay, Meal
+from app.models.user_equipment import UserHomeEquipment, UserGymEquipment
 
 __all__ = [
     "User",
@@ -25,4 +26,6 @@ __all__ = [
     "NutritionWeek",
     "NutritionDay",
     "Meal",
+    "UserHomeEquipment",
+    "UserGymEquipment",
 ]
