@@ -81,6 +81,7 @@ class UserUpdate(BaseModel):
     
     # Equipment fields
     home_equipment: Optional[List[int]] = Field(None, description="List of equipment IDs available at home")
+    gym_equipment: Optional[List[int]] = Field(None, description="List of equipment IDs available at gym")
 
 
 class UserResponse(BaseModel):
@@ -124,6 +125,7 @@ class UserResponse(BaseModel):
     
     # Equipment fields
     home_equipment: Optional[List["EquipmentInfo"]] = None
+    gym_equipment: Optional[List["EquipmentInfo"]] = None
     
     # System fields
     credits: Optional[int] = 0

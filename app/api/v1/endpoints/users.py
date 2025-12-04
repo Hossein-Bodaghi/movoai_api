@@ -22,14 +22,15 @@ async def get_current_user_profile(
     """
     Get current user profile with auth methods and goals
     """
-    from app.models.user_equipment import UserHomeEquipment
+    from app.models.user_equipment import UserHomeEquipment, UserGymEquipment
     
     # Reload user with auth methods, goals, and equipment
     user = db.query(User).options(
         joinedload(User.auth_methods),
         joinedload(User.workout_goal),
         joinedload(User.nutrition_goal),
-        joinedload(User.home_equipment_rel).joinedload(UserHomeEquipment.equipment)
+        joinedload(User.home_equipment_rel).joinedload(UserHomeEquipment.equipment),
+        joinedload(User.gym_equipment_rel).joinedload(UserGymEquipment.equipment)
     ).filter(User.user_id == current_user.user_id).first()
     
     return UserWithAuthMethods.model_validate(user)
@@ -44,13 +45,15 @@ async def update_current_user_profile(
     """
     Update current user profile
     """
-    from app.models.user_equipment import UserHomeEquipment
+    from app.models.user_equipment import UserHomeEquipment, UserGymEquipment
     
     # Update only provided fields
     update_data = user_update.model_dump(exclude_unset=True)
     
     # Handle home_equipment separately
     home_equipment_ids = update_data.pop('home_equipment', None)
+    # Handle gym_equipment separately
+    gym_equipment_ids = update_data.pop('gym_equipment', None)
     
     # Update regular fields
     for field, value in update_data.items():
@@ -72,12 +75,29 @@ async def update_current_user_profile(
                 )
                 db.add(new_equipment)
     
+    # Update gym equipment if provided
+    if gym_equipment_ids is not None:
+        # Delete existing equipment
+        db.query(UserGymEquipment).filter(
+            UserGymEquipment.user_id == current_user.user_id
+        ).delete()
+        
+        # Insert new equipment
+        if gym_equipment_ids:
+            for equipment_id in gym_equipment_ids:
+                new_equipment = UserGymEquipment(
+                    user_id=current_user.user_id,
+                    equipment_id=equipment_id
+                )
+                db.add(new_equipment)
+    
     db.commit()
     db.refresh(current_user)
     
     # Reload with equipment to include in response
     user = db.query(User).options(
-        joinedload(User.home_equipment_rel).joinedload(UserHomeEquipment.equipment)
+        joinedload(User.home_equipment_rel).joinedload(UserHomeEquipment.equipment),
+        joinedload(User.gym_equipment_rel).joinedload(UserGymEquipment.equipment)
     ).filter(User.user_id == current_user.user_id).first()
     
     return UserResponse.model_validate(user)
