@@ -66,8 +66,15 @@ class User(Base):
     nutrition_goal = relationship("NutritionGoal", back_populates="users", foreign_keys=[nutrition_goal_id])
     workout_plans = relationship("WorkoutPlan", back_populates="user", cascade="all, delete-orphan")
     nutrition_plans = relationship("NutritionPlan", back_populates="user", cascade="all, delete-orphan")
+    home_equipment_rel = relationship("UserHomeEquipment", back_populates="user", cascade="all, delete-orphan")
     
     # Property for backward compatibility
     @property
     def id(self):
         return self.user_id
+    
+    # Property to transform home_equipment relationship for Pydantic
+    @property
+    def home_equipment(self):
+        """Return list of equipment objects for serialization"""
+        return [ue.equipment for ue in self.home_equipment_rel] if self.home_equipment_rel else []

@@ -78,6 +78,9 @@ class UserUpdate(BaseModel):
     kitchen_appliances: Optional[List[str]] = None
     food_preferences: Optional[List[str]] = None
     forbidden_ingredients: Optional[List[str]] = None
+    
+    # Equipment fields
+    home_equipment: Optional[List[int]] = Field(None, description="List of equipment IDs available at home")
 
 
 class UserResponse(BaseModel):
@@ -119,6 +122,9 @@ class UserResponse(BaseModel):
     food_preferences: Optional[List[str]] = None
     forbidden_ingredients: Optional[List[str]] = None
     
+    # Equipment fields
+    home_equipment: Optional[List["EquipmentInfo"]] = None
+    
     # System fields
     credits: Optional[int] = 0
     referral_code: Optional[str] = None
@@ -126,6 +132,15 @@ class UserResponse(BaseModel):
     
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EquipmentInfo(BaseModel):
+    """Equipment information"""
+    equipment_id: int
+    name_en: str
+    name_fa: str
     
     model_config = ConfigDict(from_attributes=True)
 

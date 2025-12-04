@@ -78,7 +78,8 @@ localStorage.setItem('refresh_token', data.refresh_token);
 ### Get Profile
 ```javascript
 GET /api/v1/users/me
-// Returns full user profile with workout_goal and nutrition_goal details
+// Returns full user profile with workout_goal, nutrition_goal, and home_equipment details
+// home_equipment is an array of equipment objects: [{ equipment_id, name_en, name_fa }]
 ```
 
 ### Update Profile
@@ -90,10 +91,12 @@ Body: {
   "workout_goal_id": 1, "nutrition_goal_id": 5,
   "sport": "running", "sport_days": 3, "specialized_sport": "marathon",
   "training_location": "gym", "workout_limitations": "knee injury",
+  "home_equipment": [1, 5, 8, 12],  // Array of equipment IDs user has at home
   "dietary_restrictions": "lactose intolerant", "cooking_time": "30_60", "cooking_skill": "intermediate",
   "kitchen_appliances": "oven,microwave", "food_preferences": "chicken,rice", "forbidden_ingredients": "dairy,nuts"
 }
 // All fields optional
+// home_equipment: Pass array of equipment_id integers
 ```
 
 ### Delete Account
