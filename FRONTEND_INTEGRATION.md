@@ -235,6 +235,72 @@ DELETE /api/v1/nutrition-plans/{plan_id}
 
 ---
 
+## Feedback
+
+### Submit Feedback
+```javascript
+POST /api/v1/feedback
+Body: {
+  "week_table": "workout_weeks",  // or "nutrition_weeks"
+  "week_id": 5,
+  "responses": [
+    {
+      "question_id": "w1_difficulty",
+      "answer": "good",
+      "text_response": "چالشی بود اما همه حرکات را تکمیل کردم"
+    },
+    {
+      "question_id": "w1_pain",
+      "answer": "yes",
+      "text_response": "کمی درد شانه بعد از پرس سینه",
+      "selected_exercises": ["Cable Single Arm Bench Press", "Cable Incline Bench Press"]
+    },
+    {
+      "question_id": "w1_completion",
+      "answer": "all",
+      "text_response": null
+    }
+  ]
+}
+// Returns: Full feedback with feedback_id and submitted_at timestamp
+// Note: Can only submit feedback once per week. Returns 409 if already exists.
+```
+
+### List Feedback
+```javascript
+GET /api/v1/feedback?week_table=workout_weeks&limit=50&offset=0
+// Optional query params:
+// - week_table: Filter by "workout_weeks" or "nutrition_weeks"
+// - week_id: Filter by specific week
+// - limit: Number of results (1-100, default 50)
+// - offset: Pagination offset (default 0)
+// Returns: { feedback: [...], total: 10 }
+```
+
+### Get Feedback Details
+```javascript
+GET /api/v1/feedback/{feedback_id}
+// Returns: Full feedback including all responses
+```
+
+### Update Feedback
+```javascript
+PUT /api/v1/feedback/{feedback_id}
+Body: {
+  "week_table": "workout_weeks",
+  "week_id": 5,
+  "responses": [...]  // Updated responses
+}
+// Allows modifying feedback after submission
+```
+
+### Delete Feedback
+```javascript
+DELETE /api/v1/feedback/{feedback_id}
+```
+
+---
+
 ## Response Examples
 
 ### Workout Plan
