@@ -1,10 +1,45 @@
 """
-Pydantic schemas for Feedback
+Pydantic schemas for Feedback and Feedback Questions
 """
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import List, Optional, Dict, Any, Literal
 from datetime import datetime
 
+
+# ========== Feedback Question Schemas ==========
+
+class QuestionOption(BaseModel):
+    """Option for a feedback question"""
+    label: str = Field(..., description="Display label for the option")
+    value: str = Field(..., description="Value to submit when selected")
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FeedbackQuestionDetail(BaseModel):
+    """Detailed feedback question"""
+    question_id: int
+    week_table: Literal['workout_weeks', 'nutrition_weeks']
+    week_id: int
+    focus: Literal['performance_enhancement', 'body_recomposition', 'efficiency', 'rebuilding_rehab']
+    question_text: str
+    question_type: Literal['radio', 'multi-select']
+    options: Optional[List[Dict[str, str]]] = Field(None, description="Static options or null if dynamic")
+    allow_text: bool = Field(False, description="Whether user can add text response")
+    dynamic_options: Optional[Literal['exercises', 'meals']] = Field(None, description="Generate options from week data")
+    question_order: int
+    created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FeedbackQuestionListResponse(BaseModel):
+    """Response for listing feedback questions"""
+    questions: List[FeedbackQuestionDetail]
+    total: int
+
+
+# ========== Feedback Response Schemas ==========
 
 class FeedbackResponse(BaseModel):
     """Single question response within feedback"""

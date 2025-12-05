@@ -10,7 +10,7 @@ from app.models.exercise import Exercise
 from app.models.workout_plan import WorkoutPlan, WorkoutWeek, WorkoutDay, WorkoutDayExercise
 from app.models.nutrition_plan import NutritionPlan, NutritionWeek, NutritionDay, Meal
 from app.models.user_equipment import UserHomeEquipment, UserGymEquipment
-from app.models.feedback import Feedback
+from app.models.feedback import Feedback, FeedbackQuestion
 
 __all__ = [
     "User",
@@ -30,4 +30,5 @@ __all__ = [
     "UserHomeEquipment",
     "UserGymEquipment",
     "Feedback",
+    "FeedbackQuestion",
 ]

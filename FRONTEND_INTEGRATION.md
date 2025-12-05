@@ -299,6 +299,34 @@ Body: {
 DELETE /api/v1/feedback/{feedback_id}
 ```
 
+### List Feedback Questions
+```javascript
+GET /api/v1/feedback/questions?week_table=workout_weeks&week_id=5&focus=efficiency
+// Required params:
+// - week_table: "workout_weeks" or "nutrition_weeks"
+// - week_id: ID of the week
+// Optional:
+// - focus: User's fitness focus (defaults to user's profile focus)
+// Returns: { questions: [...], total: 3 }
+// Each question includes: question_id, question_text, question_type (radio/multi-select),
+// options (static array or null if dynamic), allow_text, dynamic_options, question_order
+```
+
+### Get Feedback Question
+```javascript
+GET /api/v1/feedback/questions/{question_id}
+// Returns: Full question details
+```
+
+### Get Dynamic Options
+```javascript
+GET /api/v1/feedback/questions/week/workout_weeks/5/options?option_type=exercises
+// For questions with dynamic_options='exercises' or 'meals'
+// Returns: { options: [{label: "...", value: "..."}], total: 10 }
+// - For exercises: Gets all exercises from workout week
+// - For meals: Gets all unique meal names from nutrition week
+```
+
 ---
 
 ## Response Examples

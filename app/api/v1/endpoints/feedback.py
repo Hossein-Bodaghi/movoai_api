@@ -8,14 +8,17 @@ from typing import Optional
 
 from app.database.session import get_db
 from app.models.user import User
-from app.models.feedback import Feedback
-from app.models.workout_plan import WorkoutWeek
-from app.models.nutrition_plan import NutritionWeek
+from app.models.feedback import Feedback, FeedbackQuestion
+from app.models.workout_plan import WorkoutWeek, WorkoutDay, WorkoutDayExercise
+from app.models.nutrition_plan import NutritionWeek, NutritionDay, Meal
+from app.models.exercise import Exercise
 from app.schemas.feedback import (
     FeedbackCreate,
     FeedbackDetail,
     FeedbackSummary,
-    FeedbackListResponse
+    FeedbackListResponse,
+    FeedbackQuestionDetail,
+    FeedbackQuestionListResponse
 )
 from app.schemas.auth import MessageResponse
 from app.dependencies import get_current_user
@@ -225,3 +228,192 @@ async def delete_feedback(
     db.commit()
     
     return MessageResponse(message="Feedback deleted successfully")
+
+
+# ========== Feedback Questions Endpoints ==========
+
+@router.get("/questions", response_model=FeedbackQuestionListResponse)
+async def list_feedback_questions(
+    week_table: str = Query(..., description="Filter by week_table: workout_weeks or nutrition_weeks"),
+    week_id: int = Query(..., description="Filter by specific week_id"),
+    focus: Optional[str] = Query(None, description="Filter by user focus"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    List feedback questions for a specific week
+    
+    Required params:
+    - **week_table**: 'workout_weeks' or 'nutrition_weeks'
+    - **week_id**: ID of the week
+    
+    Optional:
+    - **focus**: User's fitness focus to filter questions
+    """
+    # Validate week_table
+    if week_table not in ['workout_weeks', 'nutrition_weeks']:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="week_table must be 'workout_weeks' or 'nutrition_weeks'"
+        )
+    
+    # Verify the week exists and belongs to user
+    if week_table == 'workout_weeks':
+        week = db.query(WorkoutWeek).join(
+            WorkoutWeek.workout_plan
+        ).filter(
+            WorkoutWeek.week_id == week_id,
+            WorkoutWeek.workout_plan.has(user_id=current_user.user_id)
+        ).first()
+        
+        if not week:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Workout week not found or does not belong to you"
+            )
+    else:
+        week = db.query(NutritionWeek).join(
+            NutritionWeek.nutrition_plan
+        ).filter(
+            NutritionWeek.week_id == week_id,
+            NutritionWeek.nutrition_plan.has(user_id=current_user.user_id)
+        ).first()
+        
+        if not week:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Nutrition week not found or does not belong to you"
+            )
+    
+    # Build query for questions
+    query = db.query(FeedbackQuestion).filter(
+        FeedbackQuestion.week_table == week_table,
+        FeedbackQuestion.week_id == week_id
+    )
+    
+    # Filter by focus if provided, otherwise use user's focus
+    target_focus = focus if focus else current_user.focus
+    if target_focus:
+        query = query.filter(FeedbackQuestion.focus == target_focus)
+    
+    # Get questions ordered by question_order
+    questions = query.order_by(FeedbackQuestion.question_order).all()
+    
+    return FeedbackQuestionListResponse(
+        questions=[FeedbackQuestionDetail.model_validate(q) for q in questions],
+        total=len(questions)
+    )
+
+
+@router.get("/questions/{question_id}", response_model=FeedbackQuestionDetail)
+async def get_feedback_question(
+    question_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get specific feedback question by ID
+    """
+    question = db.query(FeedbackQuestion).filter(
+        FeedbackQuestion.question_id == question_id
+    ).first()
+    
+    if not question:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Question not found"
+        )
+    
+    return FeedbackQuestionDetail.model_validate(question)
+
+
+@router.get("/questions/week/{week_table}/{week_id}/options", response_model=dict)
+async def get_dynamic_options(
+    week_table: str,
+    week_id: int,
+    option_type: str = Query(..., description="Type of options: 'exercises' or 'meals'"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get dynamic options (exercises or meals) for a specific week
+    
+    Used when question has dynamic_options field set to 'exercises' or 'meals'
+    """
+    # Validate inputs
+    if week_table not in ['workout_weeks', 'nutrition_weeks']:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="week_table must be 'workout_weeks' or 'nutrition_weeks'"
+        )
+    
+    if option_type not in ['exercises', 'meals']:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="option_type must be 'exercises' or 'meals'"
+        )
+    
+    options = []
+    
+    if week_table == 'workout_weeks' and option_type == 'exercises':
+        # Get all exercises for this workout week
+        week = db.query(WorkoutWeek).join(
+            WorkoutWeek.workout_plan
+        ).filter(
+            WorkoutWeek.week_id == week_id,
+            WorkoutWeek.workout_plan.has(user_id=current_user.user_id)
+        ).first()
+        
+        if not week:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Workout week not found"
+            )
+        
+        # Get unique exercises from all days in this week
+        exercise_ids = set()
+        for day in week.days:
+            for workout_exercise in day.exercises:
+                exercise_ids.add(workout_exercise.exercise_id)
+        
+        # Fetch exercise details
+        exercises = db.query(Exercise).filter(Exercise.exercise_id.in_(exercise_ids)).all()
+        
+        options = [
+            {"label": ex.name_fa or ex.name_en, "value": str(ex.exercise_id)}
+            for ex in exercises
+        ]
+    
+    elif week_table == 'nutrition_weeks' and option_type == 'meals':
+        # Get all meals for this nutrition week
+        week = db.query(NutritionWeek).join(
+            NutritionWeek.nutrition_plan
+        ).filter(
+            NutritionWeek.week_id == week_id,
+            NutritionWeek.nutrition_plan.has(user_id=current_user.user_id)
+        ).first()
+        
+        if not week:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Nutrition week not found"
+            )
+        
+        # Get unique meals from all days in this week
+        meal_names = set()
+        for day in week.days:
+            for meal in day.meals:
+                meal_names.add(meal.name)
+        
+        options = [
+            {"label": name, "value": name}
+            for name in sorted(meal_names)
+        ]
+    
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid combination: {week_table} with {option_type}"
+        )
+    
+    return {"options": options, "total": len(options)}
