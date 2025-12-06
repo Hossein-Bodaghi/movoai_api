@@ -235,8 +235,8 @@ async def delete_feedback(
 @router.get("/questions", response_model=FeedbackQuestionListResponse)
 async def list_feedback_questions(
     week_table: str = Query(..., description="Filter by week_table: workout_weeks or nutrition_weeks"),
-    week_id: int = Query(..., description="Filter by specific week_id"),
-    focus: Optional[str] = Query(None, description="Filter by user focus"),
+    week_number: int = Query(..., description="Filter by specific week_number (1-12)"),
+    focus: str = Query(..., description="User's fitness focus"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -245,10 +245,8 @@ async def list_feedback_questions(
     
     Required params:
     - **week_table**: 'workout_weeks' or 'nutrition_weeks'
-    - **week_id**: ID of the week
-    
-    Optional:
-    - **focus**: User's fitness focus to filter questions
+    - **week_number**: Week number (1-12)
+    - **focus**: User's fitness focus (performance_enhancement, body_recomposition, efficiency, rebuilding_rehab)
     """
     # Validate week_table
     if week_table not in ['workout_weeks', 'nutrition_weeks']:
@@ -257,44 +255,27 @@ async def list_feedback_questions(
             detail="week_table must be 'workout_weeks' or 'nutrition_weeks'"
         )
     
-    # Verify the week exists and belongs to user
-    if week_table == 'workout_weeks':
-        week = db.query(WorkoutWeek).join(
-            WorkoutWeek.workout_plan
-        ).filter(
-            WorkoutWeek.week_id == week_id,
-            WorkoutWeek.workout_plan.has(user_id=current_user.user_id)
-        ).first()
-        
-        if not week:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Workout week not found or does not belong to you"
-            )
-    else:
-        week = db.query(NutritionWeek).join(
-            NutritionWeek.nutrition_plan
-        ).filter(
-            NutritionWeek.week_id == week_id,
-            NutritionWeek.nutrition_plan.has(user_id=current_user.user_id)
-        ).first()
-        
-        if not week:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Nutrition week not found or does not belong to you"
-            )
+    # Validate week_number range
+    if week_number < 1 or week_number > 12:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="week_number must be between 1 and 12"
+        )
+    
+    # Validate focus
+    valid_focus_values = ['performance_enhancement', 'body_recomposition', 'efficiency', 'rebuilding_rehab']
+    if focus not in valid_focus_values:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"focus must be one of: {', '.join(valid_focus_values)}"
+        )
     
     # Build query for questions
     query = db.query(FeedbackQuestion).filter(
         FeedbackQuestion.week_table == week_table,
-        FeedbackQuestion.week_id == week_id
+        FeedbackQuestion.week_number == week_number,
+        FeedbackQuestion.focus == focus
     )
-    
-    # Filter by focus if provided, otherwise use user's focus
-    target_focus = focus if focus else current_user.focus
-    if target_focus:
-        query = query.filter(FeedbackQuestion.focus == target_focus)
     
     # Get questions ordered by question_order
     questions = query.order_by(FeedbackQuestion.question_order).all()
@@ -327,16 +308,16 @@ async def get_feedback_question(
     return FeedbackQuestionDetail.model_validate(question)
 
 
-@router.get("/questions/week/{week_table}/{week_id}/options", response_model=dict)
+@router.get("/questions/week/{week_table}/{week_number}/options", response_model=dict)
 async def get_dynamic_options(
     week_table: str,
-    week_id: int,
+    week_number: int,
     option_type: str = Query(..., description="Type of options: 'exercises' or 'meals'"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Get dynamic options (exercises or meals) for a specific week
+    Get dynamic options (exercises or meals) for a specific week number
     
     Used when question has dynamic_options field set to 'exercises' or 'meals'
     """
@@ -353,6 +334,13 @@ async def get_dynamic_options(
             detail="option_type must be 'exercises' or 'meals'"
         )
     
+    # Validate week_number range
+    if week_number < 1 or week_number > 12:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="week_number must be between 1 and 12"
+        )
+    
     options = []
     
     if week_table == 'workout_weeks' and option_type == 'exercises':
@@ -360,7 +348,7 @@ async def get_dynamic_options(
         week = db.query(WorkoutWeek).join(
             WorkoutWeek.workout_plan
         ).filter(
-            WorkoutWeek.week_id == week_id,
+            WorkoutWeek.week_number == week_number,
             WorkoutWeek.workout_plan.has(user_id=current_user.user_id)
         ).first()
         
@@ -389,7 +377,7 @@ async def get_dynamic_options(
         week = db.query(NutritionWeek).join(
             NutritionWeek.nutrition_plan
         ).filter(
-            NutritionWeek.week_id == week_id,
+            NutritionWeek.week_number == week_number,
             NutritionWeek.nutrition_plan.has(user_id=current_user.user_id)
         ).first()
         

@@ -38,7 +38,7 @@ class FeedbackQuestion(Base):
     
     question_id = Column(Integer, primary_key=True, index=True)
     week_table = Column(String(20), nullable=False)
-    week_id = Column(Integer, nullable=False)
+    week_number = Column(Integer, nullable=False)
     focus = Column(String(50), nullable=False)
     question_text = Column(Text, nullable=False)
     question_type = Column(String(20), nullable=False)

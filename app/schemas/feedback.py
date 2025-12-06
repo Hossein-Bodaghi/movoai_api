@@ -20,7 +20,7 @@ class FeedbackQuestionDetail(BaseModel):
     """Detailed feedback question"""
     question_id: int
     week_table: Literal['workout_weeks', 'nutrition_weeks']
-    week_id: int
+    week_number: int
     focus: Literal['performance_enhancement', 'body_recomposition', 'efficiency', 'rebuilding_rehab']
     question_text: str
     question_type: Literal['radio', 'multi-select']
