@@ -147,89 +147,6 @@ async def list_feedback(
     return FeedbackListResponse(feedback=summaries, total=total)
 
 
-@router.get("/{feedback_id}", response_model=FeedbackDetail)
-async def get_feedback(
-    feedback_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Get detailed feedback by ID
-    
-    Returns full feedback including all question responses
-    """
-    feedback = db.query(Feedback).filter(
-        Feedback.feedback_id == feedback_id,
-        Feedback.user_id == current_user.user_id
-    ).first()
-    
-    if not feedback:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Feedback not found"
-        )
-    
-    return FeedbackDetail.model_validate(feedback)
-
-
-@router.put("/{feedback_id}", response_model=FeedbackDetail)
-async def update_feedback(
-    feedback_id: int,
-    feedback_data: FeedbackCreate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Update existing feedback
-    
-    Allows user to modify their feedback responses before final submission
-    """
-    feedback = db.query(Feedback).filter(
-        Feedback.feedback_id == feedback_id,
-        Feedback.user_id == current_user.user_id
-    ).first()
-    
-    if not feedback:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Feedback not found"
-        )
-    
-    # Update responses
-    feedback.responses = feedback_data.responses
-    
-    db.commit()
-    db.refresh(feedback)
-    
-    return FeedbackDetail.model_validate(feedback)
-
-
-@router.delete("/{feedback_id}", response_model=MessageResponse)
-async def delete_feedback(
-    feedback_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Delete feedback submission
-    """
-    feedback = db.query(Feedback).filter(
-        Feedback.feedback_id == feedback_id,
-        Feedback.user_id == current_user.user_id
-    ).first()
-    
-    if not feedback:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Feedback not found"
-        )
-    
-    db.delete(feedback)
-    db.commit()
-    
-    return MessageResponse(message="Feedback deleted successfully")
-
-
 # ========== Feedback Questions Endpoints ==========
 
 @router.get("/questions", response_model=FeedbackQuestionListResponse)
@@ -405,3 +322,88 @@ async def get_dynamic_options(
         )
     
     return {"options": options, "total": len(options)}
+
+
+# ========== Feedback CRUD Endpoints ==========
+
+@router.get("/{feedback_id}", response_model=FeedbackDetail)
+async def get_feedback(
+    feedback_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get detailed feedback by ID
+    
+    Returns full feedback including all question responses
+    """
+    feedback = db.query(Feedback).filter(
+        Feedback.feedback_id == feedback_id,
+        Feedback.user_id == current_user.user_id
+    ).first()
+    
+    if not feedback:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Feedback not found"
+        )
+    
+    return FeedbackDetail.model_validate(feedback)
+
+
+@router.put("/{feedback_id}", response_model=FeedbackDetail)
+async def update_feedback(
+    feedback_id: int,
+    feedback_data: FeedbackCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update existing feedback
+    
+    Allows user to modify their feedback responses before final submission
+    """
+    feedback = db.query(Feedback).filter(
+        Feedback.feedback_id == feedback_id,
+        Feedback.user_id == current_user.user_id
+    ).first()
+    
+    if not feedback:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Feedback not found"
+        )
+    
+    # Update responses
+    feedback.responses = feedback_data.responses
+    
+    db.commit()
+    db.refresh(feedback)
+    
+    return FeedbackDetail.model_validate(feedback)
+
+
+@router.delete("/{feedback_id}", response_model=MessageResponse)
+async def delete_feedback(
+    feedback_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete feedback submission
+    """
+    feedback = db.query(Feedback).filter(
+        Feedback.feedback_id == feedback_id,
+        Feedback.user_id == current_user.user_id
+    ).first()
+    
+    if not feedback:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Feedback not found"
+        )
+    
+    db.delete(feedback)
+    db.commit()
+    
+    return MessageResponse(message="Feedback deleted successfully")
