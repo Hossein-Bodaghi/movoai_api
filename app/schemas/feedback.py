@@ -43,7 +43,7 @@ class FeedbackQuestionListResponse(BaseModel):
 
 class FeedbackResponse(BaseModel):
     """Single question response within feedback"""
-    question_id: str = Field(..., description="Unique identifier for the question")
+    question_id: int = Field(..., description="Unique identifier for the question")
     answer: Any = Field(..., description="User's answer (can be string, list, or other type)")
     text_response: Optional[str] = Field(None, description="Optional text response from user")
     selected_exercises: Optional[List[str]] = Field(None, description="Optional list of exercise names if relevant")

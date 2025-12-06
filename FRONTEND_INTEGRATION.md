@@ -245,18 +245,18 @@ Body: {
   "week_id": 5,
   "responses": [
     {
-      "question_id": "w1_difficulty",
+      "question_id": 1,
       "answer": "good",
       "text_response": "چالشی بود اما همه حرکات را تکمیل کردم"
     },
     {
-      "question_id": "w1_pain",
+      "question_id": 2,
       "answer": "yes",
       "text_response": "کمی درد شانه بعد از پرس سینه",
       "selected_exercises": ["Cable Single Arm Bench Press", "Cable Incline Bench Press"]
     },
     {
-      "question_id": "w1_completion",
+      "question_id": 3,
       "answer": "all",
       "text_response": null
     }

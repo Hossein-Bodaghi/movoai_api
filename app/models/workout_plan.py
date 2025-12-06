@@ -27,7 +27,7 @@ class WorkoutPlan(Base):
     # Relationships
     user = relationship("User", back_populates="workout_plans")
     workout_goal = relationship("WorkoutGoal")
-    weeks = relationship("WorkoutWeek", back_populates="plan", cascade="all, delete-orphan")
+    weeks = relationship("WorkoutWeek", back_populates="workout_plan", cascade="all, delete-orphan")
     
     # Constraints
     __table_args__ = (
@@ -49,7 +49,7 @@ class WorkoutWeek(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
     
     # Relationships
-    plan = relationship("WorkoutPlan", back_populates="weeks")
+    workout_plan = relationship("WorkoutPlan", back_populates="weeks")
     days = relationship("WorkoutDay", back_populates="week", cascade="all, delete-orphan")
     
     # Constraints
