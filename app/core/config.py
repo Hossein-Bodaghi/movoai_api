@@ -2,6 +2,7 @@
 Application Configuration
 """
 from pydantic_settings import BaseSettings
+from pydantic import Field
 from typing import Optional
 
 
@@ -17,6 +18,9 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+    
+    # AvalAI (Workout Generator)
+    AVALAI_API_KEY: Optional[str] = Field(None, alias="x-goog-api-key")
     
     # Telegram
     TELEGRAM_BOT_TOKEN: str
@@ -53,6 +57,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        populate_by_name = True  # Allow both field name and alias
 
 
 settings = Settings()

@@ -1,6 +1,6 @@
 """
 Workout Plan endpoints (Phase 2)
-Includes mock AI generation for workout plans until AI agents are implemented
+Uses AvalAI API to generate personalized workout plans in Farsi
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
@@ -8,6 +8,7 @@ from typing import List
 import random
 
 from app.database.session import get_db
+from ai.workout_generator_farsi import generate_farsi_workout_plan
 from app.models.user import User
 from app.models.workout_plan import WorkoutPlan, WorkoutWeek, WorkoutDay, WorkoutDayExercise
 from app.models.workout_goal import WorkoutGoal
@@ -136,15 +137,15 @@ async def create_workout_plan(
     db: Session = Depends(get_db)
 ):
     """
-    Create a new workout plan with AI-generated content.
-    Currently uses mock AI generation - will be replaced with real AI agents.
+    Create a new workout plan with AI-generated content using AvalAI API.
+    Generates personalized workout plans in Farsi based on user profile.
     """
     
-    # Validate total_weeks
-    if plan_data.total_weeks not in [1, 4, 12]:
+    # Validate total_weeks (currently only supporting 1 week plans)
+    if plan_data.total_weeks != 1:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="total_weeks must be 1, 4, or 12"
+            detail="Currently only 1-week plans are supported"
         )
     
     # Get workout goal if provided
@@ -159,9 +160,40 @@ async def create_workout_plan(
                 detail="Workout goal not found"
             )
     
-    # Generate mock AI content
-    strategy = generate_mock_strategy(current_user, workout_goal, plan_data.total_weeks)
-    expectations = generate_mock_expectations(plan_data.total_weeks)
+    # Get user's equipment IDs
+    equipment_ids = []
+    if current_user.training_location == 'home':
+        equipment_ids = current_user.home_equipment or [1]  # 1 = Bodyweight
+    elif current_user.training_location == 'gym':
+        equipment_ids = current_user.gym_equipment or [1, 2, 3]  # Common gym equipment
+    else:
+        equipment_ids = [1]  # Bodyweight only for outdoor
+    
+    # Prepare user profile for AI generator
+    user_profile = {
+        'user_id': current_user.user_id,
+        'age': current_user.age,
+        'weight': float(current_user.weight) if current_user.weight else 70,
+        'height': float(current_user.height) if current_user.height else 170,
+        'gender': current_user.gender or 'male',
+        'workout_goal_id': plan_data.workout_goal_id,
+        'physical_fitness': current_user.physical_fitness or 'beginner',
+        'fitness_days': current_user.fitness_days or 3,
+        'workout_limitations': current_user.workout_limitations or 'بدون محدودیت',
+        'specialized_sport': current_user.specialized_sport or 'ندارد',
+        'training_location': current_user.training_location or 'home',
+        'equipment_ids': equipment_ids
+    }
+    
+    # Generate AI workout plan
+    try:
+        ai_plan = generate_farsi_workout_plan(db, user_profile)
+    except Exception as e:
+        print(f"Error generating AI plan: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate workout plan: {str(e)}"
+        )
     
     # Create workout plan
     workout_plan = WorkoutPlan(
@@ -171,15 +203,47 @@ async def create_workout_plan(
         total_weeks=plan_data.total_weeks,
         current_week=1,
         completed_weeks=[],
-        strategy=strategy,
-        expectations=expectations
+        strategy=ai_plan.get('strategy', ''),
+        expectations=ai_plan.get('expectations', '')
     )
     db.add(workout_plan)
     db.flush()  # Get plan_id
     
-    # Generate workout weeks with mock AI
-    for week_num in range(1, plan_data.total_weeks + 1):
-        generate_mock_workout_week(db, workout_plan, week_num, current_user)
+    # Create workout week
+    week = WorkoutWeek(
+        plan_id=workout_plan.plan_id,
+        week_number=1,
+        title="هفته اول",
+        description="برنامه تمرینی هفته اول"
+    )
+    db.add(week)
+    db.flush()
+    
+    # Create workout days from AI plan
+    for day_data in ai_plan.get('days', []):
+        day = WorkoutDay(
+            week_id=week.week_id,
+            day_name=day_data.get('day_name', 'شنبه'),
+            focus=day_data.get('focus', ''),
+            warmup=day_data.get('warmup', '5-10 دقیقه کشش پویا'),
+            cooldown=day_data.get('cooldown', '5-10 دقیقه کشش ایستا')
+        )
+        db.add(day)
+        db.flush()
+        
+        # Add exercises for this day
+        for exercise_data in day_data.get('exercises', []):
+            exercise = WorkoutDayExercise(
+                day_id=day.day_id,
+                exercise_id=exercise_data.get('exercise_id'),
+                sets=exercise_data.get('sets', '3'),
+                reps=exercise_data.get('reps', '10-12'),
+                tempo=exercise_data.get('tempo', '2-0-2-0'),
+                rest=exercise_data.get('rest', '60 ثانیه'),
+                notes=exercise_data.get('notes', ''),
+                exercise_order=exercise_data.get('exercise_order', 1)
+            )
+            db.add(exercise)
     
     db.commit()
     
