@@ -464,17 +464,22 @@ class FarsiWorkoutPlanGenerator:
       "exercises": [
         {{
           "exercise_id": 123,
+          "exercise_order": 1,
           "sets": "3",
           "reps": "10-12",
           "tempo": "2-0-2-0",
           "rest": "60 ثانیه",
-          "notes": "یادداشت‌های اضافی به فارسی",
-          "exercise_order": 1
+          "notes": "یادداشت‌های اضافی به فارسی"
         }}
       ]
     }}
   ]
 }}
+
+نکات مهم:
+- exercise_id باید همان شناسه تمرینی باشد که در لیست تمرینات موجود ارائه شده است
+- exercise_order نشان‌دهنده ترتیب اجرای تمرینات است (1، 2، 3، ...)
+- حتماً از تمرینات موجود در لیست استفاده کنید
 
 فقط JSON را برگردانید، بدون توضیحات اضافی.
 """
@@ -486,7 +491,22 @@ class FarsiWorkoutPlanGenerator:
             
             # Validate and return
             if workout_data and 'strategy' in workout_data and 'expectations' in workout_data and 'days' in workout_data:
-                return workout_data
+                # Validate that all exercises have valid exercise_ids
+                valid = True
+                for day in workout_data.get('days', []):
+                    for exercise in day.get('exercises', []):
+                        if not exercise.get('exercise_id'):
+                            print(f"⚠️ تمرین بدون exercise_id یافت شد در روز {day.get('day_name')}")
+                            valid = False
+                            break
+                    if not valid:
+                        break
+                
+                if valid:
+                    return workout_data
+                else:
+                    print("⚠️ پاسخ نامعتبر از AI (exercise_id موجود نیست)، استفاده از برنامه پیش‌فرض...")
+                    return self._generate_fallback_plan(daily_exercises)
             else:
                 print("⚠️ پاسخ نامعتبر از AI، استفاده از برنامه پیش‌فرض...")
                 return self._generate_fallback_plan(daily_exercises)

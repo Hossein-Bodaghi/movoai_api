@@ -233,9 +233,16 @@ async def create_workout_plan(
         
         # Add exercises for this day
         for exercise_data in day_data.get('exercises', []):
+            exercise_id = exercise_data.get('exercise_id')
+            
+            # Validate exercise_id is present and not None
+            if not exercise_id:
+                print(f"⚠️ Warning: Skipping exercise without exercise_id in day {day_data.get('day_name')}")
+                continue
+            
             exercise = WorkoutDayExercise(
                 day_id=day.day_id,
-                exercise_id=exercise_data.get('exercise_id'),
+                exercise_id=exercise_id,
                 sets=exercise_data.get('sets', '3'),
                 reps=exercise_data.get('reps', '10-12'),
                 tempo=exercise_data.get('tempo', '2-0-2-0'),
