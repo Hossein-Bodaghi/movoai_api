@@ -31,6 +31,9 @@ if not AVALAI_API_KEY:
 # Gemini model configuration
 GEMINI_MODEL = "gemini-2.5-pro"
 
+# Standard tempo for all exercises (if database requires it)
+STANDARD_TEMPO = "2-0-2-0"  # Eccentric-Pause-Concentric-Pause
+
 
 # ─────────────────────────────────────────────
 # SQL-BASED EXERCISE SEARCH ENGINE
@@ -401,7 +404,7 @@ class FarsiWorkoutPlanGenerator:
 1. تولید یک استراتژی کلی برنامه تمرینی به زبان فارسی (2-3 پاراگراف)
 2. توضیح انتظارات و نتایج مورد انتظار (2-3 پاراگراف)
 3. برای هر روز تمرینی، از تمرینات ارائه شده، 4-6 تمرین مناسب انتخاب کنید
-4. برای هر تمرین، ست، تکرار، تمپو، و استراحت مشخص کنید
+4. برای هر تمرین، ست، تکرار، و استراحت مشخص کنید
 5. برای گرم کردن، از تمرینات warmup استفاده کنید
 6. برای سرد کردن، از تمرینات cooldown استفاده کنید
 
@@ -410,6 +413,7 @@ class FarsiWorkoutPlanGenerator:
 - تمرینات را بر اساس سطح کاربر و هدف او انتخاب کنید
 - برنامه باید متوازن و جامع باشد
 - توجه به محدودیت‌های کاربر داشته باشید
+- از متن ساده فارسی استفاده کنید (بدون علامت markdown مانند *, **, ___)
 """
 
         # Create user message with exercise data
@@ -467,9 +471,7 @@ class FarsiWorkoutPlanGenerator:
           "exercise_order": 1,
           "sets": "3",
           "reps": "10-12",
-          "tempo": "2-0-2-0",
-          "rest": "60 ثانیه",
-          "notes": "یادداشت‌های اضافی به فارسی"
+          "rest": "60 ثانیه"
         }}
       ]
     }}
@@ -480,6 +482,7 @@ class FarsiWorkoutPlanGenerator:
 - exercise_id باید همان شناسه تمرینی باشد که در لیست تمرینات موجود ارائه شده است
 - exercise_order نشان‌دهنده ترتیب اجرای تمرینات است (1، 2، 3، ...)
 - حتماً از تمرینات موجود در لیست استفاده کنید
+- تمپو و یادداشت‌های اضافی نیاز نیست
 
 فقط JSON را برگردانید، بدون توضیحات اضافی.
 """
@@ -503,6 +506,8 @@ class FarsiWorkoutPlanGenerator:
                         break
                 
                 if valid:
+                    # Clean up response: remove tempo/notes if present, clean markdown
+                    workout_data = self._cleanup_workout_data(workout_data)
                     return workout_data
                 else:
                     print("⚠️ پاسخ نامعتبر از AI (exercise_id موجود نیست)، استفاده از برنامه پیش‌فرض...")
@@ -586,6 +591,57 @@ class FarsiWorkoutPlanGenerator:
             else:
                 raise ValueError("Could not extract JSON from response")
     
+    def _cleanup_workout_data(self, workout_data: Dict) -> Dict:
+        """
+        Clean up workout data: remove tempo/notes from exercises and clean markdown.
+        
+        Args:
+            workout_data: Workout plan data from AI
+            
+        Returns:
+            Cleaned workout data
+        """
+        import re
+        
+        def clean_text(text: str) -> str:
+            """Remove markdown formatting from text"""
+            if not text:
+                return text
+            
+            # Remove bold/italic markers
+            text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)  # **bold**
+            text = re.sub(r'\*([^*]+)\*', r'\1', text)      # *italic*
+            text = re.sub(r'__([^_]+)__', r'\1', text)      # __bold__
+            text = re.sub(r'_([^_]+)_', r'\1', text)        # _italic_
+            
+            # Clean up multiple newlines
+            text = re.sub(r'\n{3,}', '\n\n', text)  # Max 2 consecutive newlines
+            
+            return text.strip()
+        
+        # Clean text fields
+        if 'strategy' in workout_data:
+            workout_data['strategy'] = clean_text(workout_data['strategy'])
+        if 'expectations' in workout_data:
+            workout_data['expectations'] = clean_text(workout_data['expectations'])
+        
+        # Clean exercises: remove tempo and notes
+        for day in workout_data.get('days', []):
+            # Clean day text fields
+            if 'warmup' in day:
+                day['warmup'] = clean_text(day['warmup'])
+            if 'cooldown' in day:
+                day['cooldown'] = clean_text(day['cooldown'])
+            if 'focus' in day:
+                day['focus'] = clean_text(day['focus'])
+            
+            # Remove tempo and notes from exercises
+            for exercise in day.get('exercises', []):
+                exercise.pop('tempo', None)
+                exercise.pop('notes', None)
+        
+        return workout_data
+    
     def _generate_fallback_plan(self, daily_exercises: List[Dict]) -> Dict:
         """Generate a simple fallback plan if AI fails"""
         
@@ -603,9 +659,7 @@ class FarsiWorkoutPlanGenerator:
                     'exercise_id': ex['exercise_id'],
                     'sets': '3',
                     'reps': '10-12',
-                    'tempo': '2-0-2-0',
                     'rest': '60 ثانیه',
-                    'notes': f"تمرین {ex['name_fa']}",
                     'exercise_order': i
                 })
             

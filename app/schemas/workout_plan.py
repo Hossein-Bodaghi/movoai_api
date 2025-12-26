@@ -61,9 +61,7 @@ class WorkoutDayExerciseBase(BaseModel):
     exercise_id: int
     sets: Optional[str] = None
     reps: Optional[str] = None
-    tempo: Optional[str] = None
     rest: Optional[str] = None
-    notes: Optional[str] = None
     exercise_order: int
 
 
@@ -79,9 +77,7 @@ class WorkoutDayExerciseResponse(BaseModel):
     exercise_id: int
     sets: Optional[str] = None
     reps: Optional[str] = None
-    tempo: Optional[str] = None
     rest: Optional[str] = None
-    notes: Optional[str] = None
     exercise_order: int
     created_at: datetime
     exercise: Optional[ExerciseInWorkout] = None
@@ -119,6 +115,7 @@ class WorkoutWeekBase(BaseModel):
     week_number: int = Field(..., ge=1, le=12)
     title: Optional[str] = Field(None, max_length=255)
     description: Optional[str] = None
+    week_note: Optional[str] = None  # AI-generated note describing the week's goal
 
 
 class WorkoutWeekCreate(WorkoutWeekBase):
@@ -162,8 +159,9 @@ class WorkoutPlanResponse(WorkoutPlanBase):
     user_id: int
     current_week: int
     completed_weeks: List[int] = []
-    strategy: Optional[str] = None
-    expectations: Optional[str] = None
+    detailed_strategy: Optional[str] = None  # Technical strategy for Plan Generator AI (internal use)
+    strategy: Optional[str] = None  # User-friendly summary from Strategist
+    expectations: Optional[str] = None  # Realistic outcomes from Strategist
     created_at: datetime
     updated_at: datetime
     

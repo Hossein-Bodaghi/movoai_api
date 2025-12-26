@@ -19,8 +19,9 @@ class WorkoutPlan(Base):
     total_weeks = Column(Integer, nullable=False)
     current_week = Column(Integer, default=1)
     completed_weeks = Column(ARRAY(Integer), default=[])
-    strategy = Column(JSONB)
-    expectations = Column(JSONB)
+    detailed_strategy = Column(Text)  # Technical 12-week strategy for Plan Generator AI
+    strategy = Column(Text)  # User-friendly summary from Strategist
+    expectations = Column(Text)  # Realistic outcomes from Strategist
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
     
@@ -46,6 +47,7 @@ class WorkoutWeek(Base):
     week_number = Column(Integer, nullable=False)
     title = Column(String(255))
     description = Column(Text)
+    week_note = Column(Text)  # AI-generated note describing the week's goal and focus
     created_at = Column(TIMESTAMP, server_default=func.now())
     
     # Relationships
@@ -87,9 +89,7 @@ class WorkoutDayExercise(Base):
     # AI-generated attributes for this specific workout day
     sets = Column(String(50))
     reps = Column(String(50))
-    tempo = Column(String(50))
     rest = Column(String(50))
-    notes = Column(Text)
     exercise_order = Column(Integer, nullable=False)
     
     created_at = Column(TIMESTAMP, server_default=func.now())
