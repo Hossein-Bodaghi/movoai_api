@@ -49,11 +49,13 @@ class FarsiWorkoutStrategist:
                 - weight: User weight (kg)
                 - height: User height (cm)
                 - gender: User gender
-                - workout_goal_id: Training goal ID
+                - workout_goal_id: Training goal ID (1-20)
                 - physical_fitness: Fitness level (beginner/intermediate/advanced/expert)
-                - fitness_days: Number of training days per week (3-6)
+                - fitness_days: Number of fitness training days per week (0-7)
+                - sport: Current sport/activity (if any)
+                - sport_days: Number of sport training days per week (0-7)
+                - focus: User's focus and priorities
                 - workout_limitations: Physical limitations or injuries
-                - specialized_sport: Sport-specific training requirements
                 - training_location: Training location (home/gym/outdoor)
                 - equipment_ids: Available equipment list
                 
@@ -71,22 +73,38 @@ class FarsiWorkoutStrategist:
         height = user_profile.get('height', 170)
         gender = user_profile.get('gender', 'male')
         fitness_level = user_profile.get('physical_fitness', 'beginner')
-        training_days = user_profile.get('fitness_days', 3)
+        fitness_days = user_profile.get('fitness_days', 3)
+        sport = user_profile.get('sport', 'ندارد')
+        sport_days = user_profile.get('sport_days', 0)
+        focus = user_profile.get('focus', 'ندارد')
         limitations = user_profile.get('workout_limitations', 'بدون محدودیت')
-        specialized_sport = user_profile.get('specialized_sport', 'ندارد')
         location = user_profile.get('training_location', 'home')
         
         # Map workout goal ID to Persian goal name
         goal_mapping = {
-            1: 'کاهش وزن و چربی‌سوزی',
-            2: 'افزایش حجم عضلانی',
-            3: 'افزایش قدرت',
-            4: 'بهبود استقامت قلبی-عروقی',
-            5: 'تناسب اندام عمومی',
-            6: 'افزایش انعطاف‌پذیری'
+            1: 'افزایش قدرت و توان',
+            2: 'بهبود سرعت و چابکی',
+            3: 'افزایش استقامت و پایداری',
+            4: 'افزایش انعطاف‌پذیری و تحرک',
+            5: 'بهینه‌سازی بازیابی و انعطاف‌پذیری',
+            6: 'افزایش توده عضلانی بدون چربی',
+            7: 'سوزاندن چربی با حفظ عضله',
+            8: 'بهبود تعریف و تن عضلانی',
+            9: 'تغییر کلی فیزیک بدن',
+            10: 'هدف‌گیری مناطق مشکل‌دار خاص',
+            11: 'حداکثر نتایج در کمترین زمان',
+            12: 'حفظ سطح فعلی تناسب اندام',
+            13: 'تعادل بین تناسب اندام و زندگی شلوغ',
+            14: 'ایجاد قدرت کاربردی روزانه',
+            15: 'تمرین کم‌فشار اما مؤثر',
+            16: 'بازیابی از آسیب یا جراحی',
+            17: 'بازیابی سطح از دست رفته تناسب اندام',
+            18: 'تقویت مناطق ضعیف یا نامتعادل',
+            19: 'جلوگیری از آسیب مجدد و ایجاد مقاومت',
+            20: 'پیشرفت تدریجی و ایمن'
         }
-        goal_id = user_profile.get('workout_goal_id', 5)
-        goal = goal_mapping.get(goal_id, 'تناسب اندام عمومی')
+        goal_id = user_profile.get('workout_goal_id', 12)
+        goal = goal_mapping.get(goal_id, 'حفظ سطح فعلی تناسب اندام')
         
         # Map fitness level to Persian
         fitness_mapping = {
@@ -111,10 +129,12 @@ class FarsiWorkoutStrategist:
 
 مسئولیت‌های شما:
 1. تحلیل دقیق پروفایل کاربر (سن، وزن، قد، جنسیت، سطح آمادگی، هدف)
-2. طراحی استراتژی ۱۲ هفته‌ای با فازبندی منطقی
-3. در نظر گرفتن پیشرفت تدریجی (Progressive Overload)
-4. توجه به دوره‌های ریکاوری و Deload
-5. تطبیق برنامه با تجهیزات موجود و محدودیت‌های کاربر
+2. در نظر گرفتن ورزش فعلی کاربر و روزهای تمرین ورزشی (اگر دارد)
+3. طراحی استراتژی ۱۲ هفته‌ای با فازبندی منطقی
+4. در نظر گرفتن پیشرفت تدریجی (Progressive Overload)
+5. توجه به دوره‌های ریکاوری و Deload
+6. تطبیق برنامه با تجهیزات موجود و محدودیت‌های کاربر
+7. هماهنگی برنامه با فوکوس و اولویت‌های کاربر
 
 خروجی شما باید شامل ۳ بخش مجزا باشد:
 
@@ -165,9 +185,11 @@ class FarsiWorkoutStrategist:
 - جنسیت: {gender}
 - سطح آمادگی: {fitness_fa}
 - هدف تمرینی: {goal}
-- تعداد روزهای تمرین در هفته: {training_days} روز
-- محدودیت‌های ورزشی: {limitations}
-- ورزش تخصصی: {specialized_sport}
+- فوکوس و اولویت: {focus}
+- ورزش فعلی: {sport}
+- روزهای تمرین ورزشی در هفته: {sport_days} روز
+- روزهای تمرین تناسب اندام در هفته: {fitness_days} روز
+- محدودیت‌های جسمی: {limitations}
 - مکان تمرین: {location_fa}
 
 **الزامات:**
@@ -409,18 +431,25 @@ class FarsiWorkoutStrategist:
         Returns:
             Fallback strategy dictionary
         """
-        goal_id = user_profile.get('workout_goal_id', 5)
+        goal_id = user_profile.get('workout_goal_id', 12)
         fitness_level = user_profile.get('physical_fitness', 'beginner')
         
-        # Goal-specific strategies
+        # Goal-specific strategies (matching database)
         goal_strategies = {
-            1: "کاهش وزن و چربی‌سوزی",
-            2: "افزایش حجم عضلانی",
-            3: "افزایش قدرت",
-            4: "بهبود استقامت",
-            5: "تناسب اندام عمومی"
+            1: "افزایش قدرت و توان",
+            2: "بهبود سرعت و چابکی",
+            3: "افزایش استقامت و پایداری",
+            4: "افزایش انعطاف‌پذیری و تحرک",
+            5: "بهینه‌سازی بازیابی و انعطاف‌پذیری",
+            6: "افزایش توده عضلانی بدون چربی",
+            7: "سوزاندن چربی با حفظ عضله",
+            8: "بهبود تعریف و تن عضلانی",
+            9: "تغییر کلی فیزیک بدن",
+            10: "هدف‌گیری مناطق مشکل‌دار خاص",
+            11: "حداکثر نتایج در کمترین زمان",
+            12: "حفظ سطح فعلی تناسب اندام"
         }
-        goal_name = goal_strategies.get(goal_id, "تناسب اندام عمومی")
+        goal_name = goal_strategies.get(goal_id, "حفظ سطح فعلی تناسب اندام")
         
         fallback = {
             "detailed_strategy": f"""برنامه ۱۲ هفته‌ای استاندارد برای {goal_name}:
@@ -483,9 +512,9 @@ def generate_workout_strategy(user_profile: Dict) -> Dict[str, str]:
     Args:
         user_profile: User profile dictionary containing:
             - user_id, age, weight, height, gender
-            - workout_goal_id, physical_fitness, fitness_days
-            - workout_limitations, specialized_sport
-            - training_location, equipment_ids
+            - workout_goal_id (1-20), physical_fitness, fitness_days
+            - sport, sport_days, focus
+            - workout_limitations, training_location, equipment_ids
             
     Returns:
         Strategy dictionary with three outputs:
@@ -510,11 +539,13 @@ if __name__ == "__main__":
         "weight": 75,
         "height": 175,
         "gender": "male",
-        "workout_goal_id": 2,  # Build muscle
+        "workout_goal_id": 6,  # افزایش توده عضلانی بدون چربی
         "physical_fitness": "intermediate",
         "fitness_days": 4,
+        "sport": "فوتبال",
+        "sport_days": 2,
+        "focus": "افزایش قدرت پاها و بهبود توان انفجاری",
         "workout_limitations": "بدون محدودیت",
-        "specialized_sport": "ندارد",
         "training_location": "gym",
         "equipment_ids": [1, 2, 3, 5]  # Bodyweight, Dumbbells, Barbell, Cables
     }
