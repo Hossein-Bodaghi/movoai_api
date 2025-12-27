@@ -245,9 +245,7 @@ async def create_workout_plan(
                 exercise_id=exercise_id,
                 sets=exercise_data.get('sets', '3'),
                 reps=exercise_data.get('reps', '10-12'),
-                tempo=exercise_data.get('tempo', '2-0-2-0'),
                 rest=exercise_data.get('rest', '60 ثانیه'),
-                notes=exercise_data.get('notes', ''),
                 exercise_order=exercise_data.get('exercise_order', 1)
             )
             db.add(exercise)
