@@ -185,56 +185,19 @@ class FarsiWorkoutStrategist:
         weight = user_profile.get('weight', 70)
         height = user_profile.get('height', 170)
         gender = user_profile.get('gender', 'male')
-        fitness_level = user_profile.get('physical_fitness', 'beginner')
+        # Use raw Farsi value for fitness level (difficulty)
+        fitness_fa = user_profile.get('physical_fitness', 'مبتدی')
         fitness_days = user_profile.get('fitness_days', 3)
         sport = user_profile.get('sport', 'ندارد')
         sport_days = user_profile.get('sport_days', 0)
+        # Use raw Farsi value for focus
         focus = user_profile.get('focus', 'ندارد')
+        # Use raw Farsi value for description
         description = user_profile.get('description', 'بدون توضیحات')
-        location = user_profile.get('training_location', 'home')
-        
-        # Map workout goal ID to Persian goal name
-        goal_mapping = {
-            1: 'افزایش قدرت و توان',
-            2: 'بهبود سرعت و چابکی',
-            3: 'افزایش استقامت و پایداری',
-            4: 'افزایش انعطاف‌پذیری و تحرک',
-            5: 'بهینه‌سازی بازیابی و انعطاف‌پذیری',
-            6: 'افزایش توده عضلانی بدون چربی',
-            7: 'سوزاندن چربی با حفظ عضله',
-            8: 'بهبود تعریف و تن عضلانی',
-            9: 'تغییر کلی فیزیک بدن',
-            10: 'هدف‌گیری مناطق مشکل‌دار خاص',
-            11: 'حداکثر نتایج در کمترین زمان',
-            12: 'حفظ سطح فعلی تناسب اندام',
-            13: 'تعادل بین تناسب اندام و زندگی شلوغ',
-            14: 'ایجاد قدرت کاربردی روزانه',
-            15: 'تمرین کم‌فشار اما مؤثر',
-            16: 'بازیابی از آسیب یا جراحی',
-            17: 'بازیابی سطح از دست رفته تناسب اندام',
-            18: 'تقویت مناطق ضعیف یا نامتعادل',
-            19: 'جلوگیری از آسیب مجدد و ایجاد مقاومت',
-            20: 'پیشرفت تدریجی و ایمن'
-        }
-        goal_id = user_profile.get('workout_goal_id', 12)
-        goal = goal_mapping.get(goal_id, 'حفظ سطح فعلی تناسب اندام')
-        
-        # Map fitness level to Persian
-        fitness_mapping = {
-            'beginner': 'مبتدی',
-            'intermediate': 'متوسط',
-            'advanced': 'پیشرفته',
-            'expert': 'حرفه‌ای'
-        }
-        fitness_fa = fitness_mapping.get(fitness_level.lower(), 'مبتدی')
-        
-        # Map location to Persian
-        location_mapping = {
-            'home': 'خانه',
-            'gym': 'باشگاه',
-            'outdoor': 'فضای باز'
-        }
-        location_fa = location_mapping.get(location, 'خانه')
+        # Use raw Farsi value for location
+        location_fa = user_profile.get('training_location', 'خانه')
+        # Use raw Farsi value for goal if provided, else fallback
+        goal = user_profile.get('workout_goal', 'حفظ سطح فعلی تناسب اندام')
         
         # Prepare system instructions
         system_instructions = """شما یک استراتژیست حرفه‌ای تناسب اندام و مربی ورزشی با سال‌ها تجربه هستید.
@@ -330,31 +293,31 @@ class FarsiWorkoutStrategist:
         # Prepare user message
         user_message = f"""لطفاً برای کاربر زیر یک استراتژی جامع ۱۲ هفته‌ای طراحی کنید:
 
-**اطلاعات کاربر:**
-- سن: {age} سال
-- وزن: {weight} کیلوگرم
-- قد: {height} سانتی‌متر
-- جنسیت: {gender}
-- سطح آمادگی: {fitness_fa}
-- هدف تمرینی: {goal}
-- فوکوس و اولویت: {focus}
-- ورزش فعلی: {sport}
-- روزهای تمرین ورزشی در هفته: {sport_days} روز
-- روزهای تمرین تناسب اندام در هفته: {fitness_days} روز
-- توضیحات کاربر: {description}
-- مکان تمرین: {location_fa}
+    **اطلاعات کاربر:**
+    - سن: {age} سال
+    - وزن: {weight} کیلوگرم
+    - قد: {height} سانتی‌متر
+    - جنسیت: {gender}
+    - سطح آمادگی: {fitness_fa}
+    - هدف تمرینی: {goal}
+    - فوکوس و اولویت: {focus}
+    - ورزش فعلی: {sport}
+    - روزهای تمرین ورزشی در هفته: {sport_days} روز
+    - روزهای تمرین تناسب اندام در هفته: {fitness_days} روز
+    - توضیحات کاربر: {description}
+    - مکان تمرین: {location_fa}
 
-**الزامات:**
-1. استراتژی باید ۱۲ هفته‌ای باشد
-2. فازبندی منطقی داشته باشد (مثلاً ۳ فاز ۴ هفته‌ای)
-3. پیشرفت تدریجی (Progressive Overload) رعایت شود
-4. دوره‌های ریکاوری در نظر گرفته شود
-5. متناسب با سطح آمادگی کاربر باشد
+    **الزامات:**
+    1. استراتژی باید ۱۲ هفته‌ای باشد
+    2. فازبندی منطقی داشته باشد (مثلاً ۳ فاز ۴ هفته‌ای)
+    3. پیشرفت تدریجی (Progressive Overload) رعایت شود
+    4. دوره‌های ریکاوری در نظر گرفته شود
+    5. متناسب با سطح آمادگی کاربر باشد
 
-**خروجی مورد نیاز:**
-یک JSON معتبر با ۳ فیلد: detailed_strategy، user_summary، expectations
+    **خروجی مورد نیاز:**
+    یک JSON معتبر با ۳ فیلد: detailed_strategy، user_summary، expectations
 
-فقط JSON را برگردانید، بدون توضیحات اضافی."""
+    فقط JSON را برگردانید، بدون توضیحات اضافی."""
 
         # Call AvalAI API
         response_text = self._call_avalai_api(system_instructions, user_message)
