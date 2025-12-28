@@ -546,7 +546,7 @@ class AvalAIWorkoutPlanGenerator:
                 - goal: Training goal (lose_weight, build_muscle, improve_endurance, etc.)
                 - experience: Experience level (beginner, intermediate, advanced, expert)
                 - trainingDays: Number of training days per week (1-7)
-                - workoutLimitations: Any physical limitations or injuries
+                - description: User's description and any physical limitations or preferences
                 - specializedSport: Sport-specific training requirements
                 - trainingLocation: Training location (home, gym, outdoor)
                 - homeEquipment: Available equipment list
@@ -562,7 +562,7 @@ class AvalAIWorkoutPlanGenerator:
         goal = user_profile.get('goal', 'general_fitness')
         experience = user_profile.get('experience', 'beginner')
         training_days = user_profile.get('trainingDays', 3)
-        limitations = user_profile.get('workoutLimitations', 'No limitations')
+        description = user_profile.get('description', 'No description provided')
         specialized_sport = user_profile.get('specializedSport', 'None')
         location = user_profile.get('trainingLocation', 'home')
         equipment = user_profile.get('homeEquipment', ['bodyweight'])
@@ -633,7 +633,7 @@ class AvalAIWorkoutPlanGenerator:
         # Generate structured plan using AvalAI
         print("\n🤖 Generating structured plan with AvalAI Gemini API...")
         workout_plan = self._generate_plan_with_avalai(
-            user_profile, weekly_exercises, limitations, strategy, difficulty
+            user_profile, weekly_exercises, description, strategy, difficulty
         )
         
         print("✅ Workout plan generation complete!\n")
@@ -798,7 +798,7 @@ class AvalAIWorkoutPlanGenerator:
         }
     
     def _generate_plan_with_avalai(self, user_profile: Dict, weekly_exercises: List[Dict],
-                                   limitations: str, strategy: Dict, difficulty: str) -> List[Dict]:
+                                   description: str, strategy: Dict, difficulty: str) -> List[Dict]:
         """Use AvalAI Gemini API to structure the workout plan"""
         
         # Prepare the prompt
@@ -833,7 +833,7 @@ EXERCISE SELECTION GUIDELINES:
    - Hypertrophy: 8-12 reps, 60-90 sec rest
    - Endurance: 12-15+ reps, 30-60 sec rest
 
-5. **Safety**: Respect user limitations and provide modifications in notes
+5. **Safety**: Respect user's description and any mentioned limitations, provide modifications in notes
 
 6. **Warm-up/Cool-down**: Essential for injury prevention and recovery
 
@@ -906,7 +906,7 @@ OUTPUT: Pure JSON array only, starting with [ and ending with ]"""
 - Goal: {user_profile.get('goal')}
 - Experience: {user_profile.get('experience')} (Difficulty: {difficulty})
 - Training Days: {user_profile.get('trainingDays')} days/week
-- Limitations: {limitations}
+- Description: {description}
 - Specialized Sport: {user_profile.get('specializedSport', 'None')}
 - Location: {user_profile.get('trainingLocation')}
 - Equipment: {', '.join(user_profile.get('homeEquipment', ['bodyweight']))}
@@ -1117,7 +1117,7 @@ def generate_workout_plan(user_profile: Dict) -> Dict:
         user_profile: User profile dictionary containing:
             - user_id, age, weight, height, gender
             - goal, experience, trainingDays
-            - workoutLimitations, specializedSport
+            - description, specializedSport
             - trainingLocation, homeEquipment
             
     Returns:
@@ -1148,7 +1148,7 @@ if __name__ == "__main__":
         "experience": "intermediate",
         "trainingDays": 4,
         "dietaryRestrictions": "None",
-        "workoutLimitations": "No limitations",
+        "description": "No limitations",
         "specializedSport": "None",
         "trainingLocation": "gym",
         "homeEquipment": ["Dumbbells", "Barbell", "Bodyweight", "Pull-up Bar"]

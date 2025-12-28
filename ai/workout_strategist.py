@@ -168,7 +168,7 @@ class FarsiWorkoutStrategist:
                 - sport: Current sport/activity (if any)
                 - sport_days: Number of sport training days per week (0-7)
                 - focus: User's focus and priorities
-                - workout_limitations: Physical limitations or injuries
+                - description: User description of the desire workout
                 - training_location: Training location (home/gym/outdoor)
                 - equipment_ids: Available equipment list
                 
@@ -190,7 +190,7 @@ class FarsiWorkoutStrategist:
         sport = user_profile.get('sport', 'ندارد')
         sport_days = user_profile.get('sport_days', 0)
         focus = user_profile.get('focus', 'ندارد')
-        limitations = user_profile.get('workout_limitations', 'بدون محدودیت')
+        description = user_profile.get('description', 'بدون توضیحات')
         location = user_profile.get('training_location', 'home')
         
         # Map workout goal ID to Persian goal name
@@ -341,7 +341,7 @@ class FarsiWorkoutStrategist:
 - ورزش فعلی: {sport}
 - روزهای تمرین ورزشی در هفته: {sport_days} روز
 - روزهای تمرین تناسب اندام در هفته: {fitness_days} روز
-- محدودیت‌های جسمی: {limitations}
+- توضیحات کاربر: {description}
 - مکان تمرین: {location_fa}
 
 **الزامات:**
@@ -666,7 +666,7 @@ def generate_workout_strategy(user_profile: Dict) -> Dict[str, str]:
             - user_id, age, weight, height, gender
             - workout_goal_id (1-20), physical_fitness, fitness_days
             - sport, sport_days, focus
-            - workout_limitations, training_location, equipment_ids
+            - description, training_location, equipment_ids
             
     Returns:
         Strategy dictionary with three outputs:
@@ -697,7 +697,7 @@ if __name__ == "__main__":
         "sport": "فوتبال",
         "sport_days": 2,
         "focus": "افزایش قدرت پاها و بهبود توان انفجاری",
-        "workout_limitations": "بدون محدودیت",
+        "description": "بدون محدودیت",
         "training_location": "gym",
         "equipment_ids": [1, 2, 3, 5]  # Bodyweight, Dumbbells, Barbell, Cables
     }
