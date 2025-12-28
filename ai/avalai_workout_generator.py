@@ -60,6 +60,90 @@ AVAILABLE_EQUIPMENT = [
 ]
 
 # ─────────────────────────────────────────────
+# DATABASE MUSCLE GROUPS & REGIONS
+# ─────────────────────────────────────────────
+
+# Muscle Groups (from workout_db.muscle_group table)
+# Distribution: Glutes (20.54%), Arms (16.56%), Back (14.74%), Quads (13.32%)
+MUSCLE_GROUPS = {
+    1: {"name_en": "Arms", "name_fa": "بازو", "percentage": 16.56},
+    2: {"name_en": "Back", "name_fa": "پشت", "percentage": 14.74},
+    3: {"name_en": "Calves", "name_fa": "ساق پا", "percentage": 3.93},
+    4: {"name_en": "Chest", "name_fa": "سینه", "percentage": 5.92},
+    5: {"name_en": "Core", "name_fa": "شکم", "percentage": 8.73},
+    6: {"name_en": "Feet", "name_fa": "کف پا", "percentage": 0.43},
+    7: {"name_en": "Glutes", "name_fa": "سرینی (باسن)", "percentage": 20.54},
+    8: {"name_en": "Hamstrings", "name_fa": "همسترینگ (پشت پا)", "percentage": 5.62},
+    9: {"name_en": "Neck", "name_fa": "گردن", "percentage": 0.30},
+    10: {"name_en": "Quads", "name_fa": "چهارسر ران", "percentage": 13.32},
+    11: {"name_en": "Shoulders", "name_fa": "سرشانه", "percentage": 9.90}
+}
+
+# Muscle Regions (from workout_db.muscle_region table)
+# 38 specific muscle regions mapped to muscle groups
+MUSCLE_REGIONS = {
+    # Glutes (muscle_group_id: 7)
+    1: {"muscle_group_id": 7, "name_en": "Maximus", "name_fa": "سرینی بزرگ"},
+    2: {"muscle_group_id": 7, "name_en": "Medius", "name_fa": "سرینی میانی"},
+    
+    # Quads (muscle_group_id: 10)
+    3: {"muscle_group_id": 10, "name_en": "Inner (Vastus Medialis)", "name_fa": "بخش داخلی چهارسر"},
+    4: {"muscle_group_id": 10, "name_en": "Outer (Vastus Lateralis)", "name_fa": "بخش خارجی چهارسر"},
+    5: {"muscle_group_id": 10, "name_en": "Rectus Femoris", "name_fa": "راست رانی (بخشی از چهارسر)"},
+    36: {"muscle_group_id": 10, "name_en": "Adductors", "name_fa": "کشاله ران"},
+    
+    # Hamstrings (muscle_group_id: 8)
+    6: {"muscle_group_id": 8, "name_en": "Lateral (Biceps Femoris)", "name_fa": "بخش خارجی همسترینگ"},
+    7: {"muscle_group_id": 8, "name_en": "Medial (Semitendinosus/Semimembranosus)", "name_fa": "بخش داخلی همسترینگ"},
+    
+    # Calves (muscle_group_id: 3)
+    8: {"muscle_group_id": 3, "name_en": "Gastrocnemius", "name_fa": "دوقلو (ساق پا)"},
+    9: {"muscle_group_id": 3, "name_en": "Soleus", "name_fa": "نعلی (ساق پا)"},
+    10: {"muscle_group_id": 3, "name_en": "Tibialis Anterior", "name_fa": "درشتنئی پیشین"},
+    
+    # Chest (muscle_group_id: 4)
+    11: {"muscle_group_id": 4, "name_en": "Upper (Clavicular)", "name_fa": "بالای سینه"},
+    12: {"muscle_group_id": 4, "name_en": "Mid/Lower (Sternal)", "name_fa": "اواسط و پایین سینه"},
+    
+    # Shoulders (muscle_group_id: 11)
+    13: {"muscle_group_id": 11, "name_en": "Anterior Deltoid", "name_fa": "دلتوئید قدامی"},
+    14: {"muscle_group_id": 11, "name_en": "Lateral Deltoid", "name_fa": "دلتوئید جانبی"},
+    15: {"muscle_group_id": 11, "name_en": "Posterior Deltoid", "name_fa": "دلتوئید خلفی"},
+    
+    # Back (muscle_group_id: 2)
+    16: {"muscle_group_id": 2, "name_en": "Upper Trapezius (General)", "name_fa": "کول (ذوزنقهای)"},
+    17: {"muscle_group_id": 2, "name_en": "Upper Trapezius", "name_fa": "بخش بالایی کول"},
+    18: {"muscle_group_id": 2, "name_en": "Mid Trapezius / Rhomboids", "name_fa": "بخش میانی کول"},
+    19: {"muscle_group_id": 2, "name_en": "Lower Trapezius", "name_fa": "بخش پایینی کول"},
+    20: {"muscle_group_id": 2, "name_en": "Latissimus Dorsi", "name_fa": "زیر بغل (پشتی بزرگ)"},
+    21: {"muscle_group_id": 2, "name_en": "Erector Spinae", "name_fa": "فیله کمر"},
+    22: {"muscle_group_id": 2, "name_en": "General", "name_fa": "عمومی"},
+    
+    # Arms (muscle_group_id: 1)
+    23: {"muscle_group_id": 1, "name_en": "Biceps – Long Head", "name_fa": "سر بلند جلو بازو"},
+    24: {"muscle_group_id": 1, "name_en": "Biceps – Short Head", "name_fa": "سر کوتاه جلو بازو"},
+    25: {"muscle_group_id": 1, "name_en": "Triceps – Long Head", "name_fa": "سر بلند پشت بازو"},
+    26: {"muscle_group_id": 1, "name_en": "Triceps – Lateral Head", "name_fa": "سر جانبی پشت بازو"},
+    27: {"muscle_group_id": 1, "name_en": "Triceps – Medial Head", "name_fa": "سر میانی پشت بازو"},
+    28: {"muscle_group_id": 1, "name_en": "Forearm (General)", "name_fa": "ساعد"},
+    29: {"muscle_group_id": 1, "name_en": "Forearm – Flexors", "name_fa": "تاکنندههای مچ"},
+    30: {"muscle_group_id": 1, "name_en": "Forearm – Extensors", "name_fa": "بازکنندههای مچ"},
+    31: {"muscle_group_id": 1, "name_en": "Intrinsic Hand Muscles", "name_fa": "پنجه / دستها"},
+    
+    # Core (muscle_group_id: 5)
+    32: {"muscle_group_id": 5, "name_en": "Rectus Abdominis (General)", "name_fa": "شکم"},
+    33: {"muscle_group_id": 5, "name_en": "Upper Rectus Abdominis", "name_fa": "بالای شکم"},
+    34: {"muscle_group_id": 5, "name_en": "Lower Rectus Abdominis", "name_fa": "زیر شکم"},
+    35: {"muscle_group_id": 5, "name_en": "Obliques", "name_fa": "مورب شکمی"},
+    
+    # Feet (muscle_group_id: 6)
+    37: {"muscle_group_id": 6, "name_en": "Intrinsic Foot Muscles", "name_fa": "کف پا"},
+    
+    # Neck (muscle_group_id: 9)
+    38: {"muscle_group_id": 9, "name_en": "Cervical Muscles", "name_fa": "گردن"}
+}
+
+# ─────────────────────────────────────────────
 # SQL-BASED EXERCISE SEARCH ENGINE
 # ─────────────────────────────────────────────
 class SQLExerciseSearchEngine:
@@ -745,6 +829,29 @@ PERSONALIZATION:
 - Balance muscle groups for symmetry
 - Include unilateral exercises when appropriate
 - Provide form cues and safety reminders in notes
+
+MUSCLE GROUP DATABASE AWARENESS:
+You have access to 11 muscle groups with varying exercise availability:
+- Glutes (20.54%): Most exercises available - prioritize for lower body
+- Arms (16.56%): Second most - includes Biceps/Triceps/Forearms
+- Back (14.74%): Third most - includes Traps, Lats, Erector Spinae
+- Quads (13.32%): Fourth most - includes Vastus, Rectus Femoris, Adductors
+- Shoulders (9.90%): Anterior/Lateral/Posterior Deltoids
+- Core (8.73%): Upper/Lower Abs, Obliques
+- Chest (5.92%): Upper/Mid/Lower regions
+- Hamstrings (5.62%): Lateral/Medial heads
+- Calves (3.93%): Gastrocnemius, Soleus, Tibialis
+- Feet (0.43%): Limited exercises
+- Neck (0.30%): Very limited exercises
+
+MUSCLE REGIONS:
+When selecting exercises, consider targeting specific muscle regions:
+- Shoulders: Vary between anterior, lateral, and posterior deltoid emphasis
+- Back: Include exercises for upper/mid/lower traps, lats, and erector spinae
+- Arms: Balance biceps (long/short head) and triceps (long/lateral/medial head)
+- Chest: Include both upper (clavicular) and mid/lower (sternal) exercises
+- Quads: Mix inner/outer vastus and rectus femoris movements
+- Core: Target upper abs, lower abs, and obliques separately
 
 OUTPUT: Pure JSON array only, starting with [ and ending with ]"""
 
