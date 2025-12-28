@@ -110,6 +110,15 @@ MUSCLE_REGIONS = {
     38: {"muscle_group_id": 9, "name_en": "Cervical Muscles", "name_fa": "گردن"}
 }
 
+# Allowed Exercise Styles (from workout_db.style table)
+# AI can only use these 4 styles for workout planning
+ALLOWED_STYLES = {
+    5: {"name_en": "Cardio", "name_fa": "کاردیو", "count": 46},
+    11: {"name_en": "Recovery", "name_fa": "ریکاوری", "count": 176},
+    13: {"name_en": "Stretches", "name_fa": "کشش", "count": 52},
+    15: {"name_en": "Yoga", "name_fa": "یوگا", "count": 73}
+}
+
 
 # ─────────────────────────────────────────────
 # FARSI WORKOUT STRATEGIST
@@ -235,6 +244,18 @@ class FarsiWorkoutStrategist:
 - Calves (ساق پا): 3.93% تمرینات - شامل Gastrocnemius، Soleus، Tibialis Anterior
 - Feet (کف پا): 0.43% تمرینات
 - Neck (گردن): 0.30% تمرینات
+
+سبک‌های تمرینی مجاز (محدود به ۴ نوع):
+- Recovery (ریکاوری): 176 تمرین - فعالیت‌های بازیابی و استراحت فعال
+- Yoga (یوگا): 73 تمرین - انعطاف‌پذیری و تمرکز ذهنی
+- Stretches (کشش): 52 تمرین - کشش‌های دینامیک و استاتیک
+- Cardio (کاردیو): 46 تمرین - تمرینات قلبی-عروقی
+
+محدودیت‌های مهم:
+- از فیلتر کردن بر اساس Goal (هدف تمرین) استفاده نکنید - این موارد ذاتی انتخاب تمرین هستند
+- از فیلتر کردن بر اساس Mechanics (مکانیک تمرین) استفاده نکنید - این موارد ذاتی تمرینات هستند
+- از فیلتر کردن بر اساس Position (وضعیت بدن) استفاده نکنید - این موارد ذاتی تمرینات هستند
+- از فیلتر کردن بر اساس Training Phase استفاده نکنید - این توسط ساختار برنامه تعیین می‌شود
 
 خروجی شما باید شامل ۳ بخش مجزا باشد:
 

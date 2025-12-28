@@ -143,6 +143,15 @@ MUSCLE_REGIONS = {
     38: {"muscle_group_id": 9, "name_en": "Cervical Muscles", "name_fa": "گردن"}
 }
 
+# Allowed Exercise Styles (from workout_db.style table)
+# AI can only filter by these 4 styles
+ALLOWED_STYLES = {
+    5: {"name_en": "Cardio", "name_fa": "کاردیو", "count": 46},
+    11: {"name_en": "Recovery", "name_fa": "ریکاوری", "count": 176},
+    13: {"name_en": "Stretches", "name_fa": "کشش", "count": 52},
+    15: {"name_en": "Yoga", "name_fa": "یوگا", "count": 73}
+}
+
 # ─────────────────────────────────────────────
 # SQL-BASED EXERCISE SEARCH ENGINE
 # ─────────────────────────────────────────────
@@ -170,10 +179,6 @@ class SQLExerciseSearchEngine:
                         muscle_groups: Optional[List[str]] = None,
                         muscle_regions: Optional[List[str]] = None,
                         equipment: Optional[List[str]] = None,
-                        goals: Optional[List[str]] = None,
-                        mechanics: Optional[List[str]] = None,
-                        position: Optional[List[str]] = None,
-                        training_phase: Optional[List[str]] = None,
                         style: Optional[List[str]] = None,
                         limit: int = 50) -> List[Dict]:
         """
@@ -185,15 +190,18 @@ class SQLExerciseSearchEngine:
         DIFFICULTY TABLE (difficulty):
         - Options: Beginner, Novice, Intermediate, Advanced
         - Distribution: Beginner (37%), Novice (26%), Intermediate (25%), Advanced (11%)
+        - USER-PROVIDED: Based on user's experience level
         
         MUSCLE_GROUP TABLE (muscle_group):
         - Options: Glutes, Arms, Back, Quads, Shoulders, Core, Chest, Hamstrings, Calves, Feet, Neck
         - Most common: Glutes (20.5%), Arms (16.6%), Back (14.7%), Quads (13.3%)
+        - AI-FILTERABLE: AI can select which muscle groups to target
         
         MUSCLE_REGION TABLE (muscle_region):
-        - Specific regions within muscle groups (37 different regions)
+        - Specific regions within muscle groups (38 different regions)
         - Examples: Anterior Deltoid, Erector Spinae, Rectus Abdominis, Latissimus Dorsi, etc.
         - Top regions: Anterior Deltoid (11.3%), Erector Spinae (9.8%), Rectus Abdominis (8.3%)
+        - AI-FILTERABLE: AI can target specific muscle regions for precision
         
         EQUIPMENT TABLE (equipment):
         - Available: Bodyweight, Dumbbells, Barbell, Kettlebell, Cables, Machine, 
@@ -201,25 +209,21 @@ class SQLExerciseSearchEngine:
           Stability Ball (Swiss Ball), Pull-up Bar, Box (Plyo/Step), 
           Ring (Gymnastic), Row Erg Rower, Treadmill
         - Most common: Bodyweight (29.6%), Dumbbells (16%), Barbell (10.3%)
+        - USER-PROVIDED: Based on available equipment
         
-        GOAL TABLE (goal):
-        - Training objectives like Strength, Hypertrophy, Endurance, Power, Flexibility, etc.
+        STYLE TABLE (style) - LIMITED ACCESS:
+        - AI can ONLY filter by these 4 allowed styles:
+          * Recovery (176 exercises) - for rest day activities
+          * Yoga (73 exercises) - for flexibility and mindfulness
+          * Stretches (52 exercises) - for warmup/cooldown
+          * Cardio (46 exercises) - for cardiovascular training
+        - Note: style_id is a direct foreign key in exercise table
         
-        MECHANICS TABLE (mechanics):
-        - Options: Compound, Isolation, Dynamic, Static, etc.
-        - Determines exercise complexity and joint involvement
-        
-        POSITION TABLE (position):
-        - Body positions: Standing, Seated, Lying, Kneeling, etc.
-        - Affects exercise stability and difficulty
-        
-        TRAINING_PHASE TABLE (training_phase):
-        - Workout phases: Warm-up, Main Lift, Accessory, Cool-down, etc.
-        
-        STYLE TABLE (style):
-        - Exercise styles: Recovery, Stretches, Cardio
-        - Note: style_id is a direct foreign key in the exercise table (not a junction table)
-        - Special categorization for workout types
+        RESTRICTED TABLES (AI cannot filter by these):
+        - GOAL: Training objectives are determined by user profile, not AI
+        - MECHANICS: Exercise complexity is inherent, not a filter
+        - POSITION: Body position is inherent to exercise, not a filter
+        - TRAINING_PHASE: Phase is determined by workout structure, not search
         
         Args:
             difficulty (str, optional): Difficulty level - USER-PROVIDED
@@ -231,25 +235,14 @@ class SQLExerciseSearchEngine:
             
             muscle_regions (List[str], optional): Specific muscle regions - AI-FILTERABLE
                 Examples: "Anterior Deltoid", "Latissimus Dorsi", "Rectus Abdominis"
+                Full list available in MUSCLE_REGIONS dictionary
             
             equipment (List[str], optional): Available equipment - USER-PROVIDED
                 Options: See AVAILABLE_EQUIPMENT list above (first 17 equipment types)
             
-            goals (List[str], optional): Training goals - AI-FILTERABLE
-                Examples: "Strength", "Hypertrophy", "Endurance", "Power", "Flexibility"
-            
-            mechanics (List[str], optional): Exercise mechanics - AI-FILTERABLE
-                Options: "Compound", "Isolation", "Dynamic", "Static"
-            
-            position (List[str], optional): Body positions - AI-FILTERABLE
-                Options: "Standing", "Seated", "Lying", "Kneeling", "Prone", "Supine"
-            
-            training_phase (List[str], optional): Workout phase - AI-FILTERABLE
-                Options: "Warm-up", "Main Lift", "Accessory", "Cool-down"
-            
-            style (List[str], optional): Exercise style - AI-FILTERABLE
-                Options: "Recovery", "Stretches", "Cardio"
-                Note: style_id is a direct foreign key in exercise table
+            style (List[str], optional): Exercise style - AI-FILTERABLE (LIMITED)
+                Options: "Recovery", "Yoga", "Stretches", "Cardio" ONLY
+                Distribution: Recovery (176), Yoga (73), Stretches (52), Cardio (46)
             
             limit (int): Maximum number of results (default: 50)
             
@@ -257,7 +250,7 @@ class SQLExerciseSearchEngine:
             List[Dict]: List of exercises with full details including:
                 - exercise_id, name, instructions
                 - difficulty, equipment, muscle groups/regions
-                - goals, mechanics, position, training phase, style
+                - style (if applicable)
         """
         conn = self.get_connection()
         exercises = []
@@ -437,15 +430,16 @@ class SQLExerciseSearchEngine:
     def search_warmup_exercises(self, muscle_focus: Optional[str] = None, 
                                 equipment: List[str] = None, limit: int = 15) -> List[Dict]:
         """
-        Search for warmup exercises.
+        Search for warmup exercises using dynamic/cardio styles.
         
         Args:
             muscle_focus: Optional muscle group to focus warmup on
             equipment: Available equipment
             limit: Maximum results
         """
+        # Warmup exercises are typically cardio or stretches
         return self.search_exercises(
-            training_phase=['Warm-up', 'Warmup'],
+            style=['Cardio', 'Stretches'],
             muscle_groups=[muscle_focus] if muscle_focus else None,
             equipment=equipment,
             limit=limit
@@ -460,8 +454,8 @@ class SQLExerciseSearchEngine:
             muscle_focus: Optional muscle group to focus cooldown on
             limit: Maximum results
         """
+        # Cooldown uses Stretches and Recovery styles
         return self.search_exercises(
-            training_phase=['Cool-down', 'Cooldown'],
             style=['Stretches', 'Recovery'],
             muscle_groups=[muscle_focus] if muscle_focus else None,
             limit=limit
@@ -555,34 +549,24 @@ class AvalAIWorkoutPlanGenerator:
             'lose_weight': {
                 'focus_areas': ['Full Body', 'Core'],
                 'muscle_groups': ['Glutes', 'Quads', 'Core', 'Back'],
-                'goals': ['Endurance', 'Full Body', 'Core Strength'],
-                'mechanics': ['Compound', 'Dynamic'],
                 'style': ['Cardio']
             },
             'build_muscle': {
                 'focus_areas': ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms'],
-                'muscle_groups': ['Chest', 'Back', 'Quads', 'Shoulders', 'Arms'],
-                'goals': ['Strength', 'Hypertrophy', 'Muscle Building'],
-                'mechanics': ['Compound', 'Isolation']
+                'muscle_groups': ['Chest', 'Back', 'Quads', 'Shoulders', 'Arms']
             },
             'improve_endurance': {
                 'focus_areas': ['Full Body', 'Core', 'Legs'],
                 'muscle_groups': ['Glutes', 'Quads', 'Core', 'Back'],
-                'goals': ['Endurance', 'Muscle Endurance', 'Stamina'],
-                'mechanics': ['Dynamic', 'Compound'],
                 'style': ['Cardio']
             },
             'general_fitness': {
                 'focus_areas': ['Full Body', 'Core'],
-                'muscle_groups': ['Glutes', 'Quads', 'Core', 'Back', 'Chest'],
-                'goals': ['Full Body', 'Core Strength'],
-                'mechanics': ['Compound', 'Dynamic']
+                'muscle_groups': ['Glutes', 'Quads', 'Core', 'Back', 'Chest']
             },
             'increase_strength': {
                 'focus_areas': ['Compound movements', 'Full Body'],
-                'muscle_groups': ['Back', 'Chest', 'Quads', 'Glutes'],
-                'goals': ['Strength', 'Power'],
-                'mechanics': ['Compound']
+                'muscle_groups': ['Back', 'Chest', 'Quads', 'Glutes']
             }
         }
         
@@ -722,9 +706,7 @@ class AvalAIWorkoutPlanGenerator:
                 # Get compound movements
                 exercises = self.search_engine.search_exercises(
                     difficulty=difficulty,
-                    mechanics=strategy.get('mechanics', ['Compound']),
                     equipment=equipment,
-                    goals=strategy.get('goals', ['Full Body']),
                     limit=30
                 )
             else:
@@ -853,6 +835,19 @@ When selecting exercises, consider targeting specific muscle regions:
 - Quads: Mix inner/outer vastus and rectus femoris movements
 - Core: Target upper abs, lower abs, and obliques separately
 
+ALLOWED EXERCISE STYLES (LIMITED):
+You can ONLY use these 4 exercise styles for filtering:
+- Recovery (176 exercises): Low-intensity activities for rest days
+- Yoga (73 exercises): Flexibility and mindfulness practices
+- Stretches (52 exercises): Dynamic/static stretching for warmup/cooldown
+- Cardio (46 exercises): Cardiovascular conditioning exercises
+
+RESTRICTIONS:
+- DO NOT filter by training goals (Strength, Hypertrophy, etc.) - these are inherent to exercise selection
+- DO NOT filter by mechanics (Compound, Isolation) - these are inherent to exercises
+- DO NOT filter by position (Standing, Seated) - these are inherent to exercises
+- DO NOT filter by training phase (Warmup, Main, etc.) - this is determined by workout structure
+
 OUTPUT: Pure JSON array only, starting with [ and ending with ]"""
 
         user_message = f"""User Profile:
@@ -871,8 +866,6 @@ OUTPUT: Pure JSON array only, starting with [ and ending with ]"""
 Training Strategy:
 - Focus Areas: {', '.join(strategy['focus_areas'])}
 - Target Muscle Groups: {', '.join(strategy['muscle_groups'])}
-- Training Goals: {', '.join(strategy['goals'])}
-- Preferred Mechanics: {', '.join(strategy['mechanics'])}
 
 Available Exercises by Day:
 """
