@@ -119,6 +119,23 @@ ALLOWED_STYLES = {
     15: {"name_en": "Yoga", "name_fa": "یوگا", "count": 73}
 }
 
+# Movement Patterns (from workout_db.movement_pattern table)
+# Fundamental movement patterns for exercise categorization
+# Distribution: None (34.64%), Hinge (10.86%), Squat (8.73%), Lunge (8.59%)
+MOVEMENT_PATTERNS = {
+    1: {"name_en": "Squat", "name_fa": "اسکوات", "percentage": 8.73},
+    2: {"name_en": "Hinge", "name_fa": "لولایی", "percentage": 10.86},
+    3: {"name_en": "Lunge", "name_fa": "لانچ", "percentage": 8.59},
+    4: {"name_en": "Push – Horizontal", "name_fa": "فشار – افقی", "percentage": 7.40},
+    5: {"name_en": "Push – Vertical", "name_fa": "فشار – عمودی", "percentage": 6.00},
+    6: {"name_en": "Pull – Horizontal", "name_fa": "کشش – افقی", "percentage": 7.06},
+    7: {"name_en": "Pull – Vertical", "name_fa": "کشش – عمودی", "percentage": 4.93},
+    8: {"name_en": "Carry", "name_fa": "حمل", "percentage": 0.67},
+    9: {"name_en": "Rotation", "name_fa": "چرخش", "percentage": 4.33},
+    10: {"name_en": "Anti-Rotation", "name_fa": "ضد چرخش", "percentage": 6.80},
+    11: {"name_en": "None", "name_fa": "ندارد", "percentage": 34.64}
+}
+
 
 # ─────────────────────────────────────────────
 # FARSI WORKOUT STRATEGIST
@@ -250,6 +267,21 @@ class FarsiWorkoutStrategist:
 - Yoga (یوگا): 73 تمرین - انعطاف‌پذیری و تمرکز ذهنی
 - Stretches (کشش): 52 تمرین - کشش‌های دینامیک و استاتیک
 - Cardio (کاردیو): 46 تمرین - تمرینات قلبی-عروقی
+
+الگوهای حرکتی (Movement Patterns):
+- Squat (اسکوات): 8.73% - حرکات دوطرفه پایین تنه، زانو-محور
+- Hinge (لولایی): 10.86% - حرکات باسن-محور (ددلیفت، گودمورنینگ)
+- Lunge (لانچ): 8.59% - حرکات یک‌طرفه پایین تنه
+- Push – Horizontal (فشار افقی): 7.40% - پرس سینه، شنا
+- Push – Vertical (فشار عمودی): 6.00% - پرس سرشانه
+- Pull – Horizontal (کشش افقی): 7.06% - پارویی
+- Pull – Vertical (کشش عمودی): 4.93% - بارفیکس، کشش کمر
+- Carry (حمل): 0.67% - حمل وزنه برای ثبات مرکز بدن
+- Rotation (چرخش): 4.33% - حرکات چرخشی برای قدرت
+- Anti-Rotation (ضد چرخش): 6.80% - ثبات مرکز بدن در برابر چرخش
+- None (ندارد): 34.64% - تمرینات بدون الگوی حرکتی خاص
+
+برای برنامه‌ریزی متعادل و کاربردی، از تنوع الگوهای حرکتی استفاده کنید.
 
 محدودیت‌های مهم:
 - از فیلتر کردن بر اساس Goal (هدف تمرین) استفاده نکنید - این موارد ذاتی انتخاب تمرین هستند

@@ -152,6 +152,23 @@ ALLOWED_STYLES = {
     15: {"name_en": "Yoga", "name_fa": "یوگا", "count": 73}
 }
 
+# Movement Patterns (from workout_db.movement_pattern table)
+# AI can filter by fundamental movement patterns
+# Distribution: None (34.64%), Hinge (10.86%), Squat (8.73%), Lunge (8.59%)
+MOVEMENT_PATTERNS = {
+    1: {"name_en": "Squat", "name_fa": "اسکوات", "percentage": 8.73},
+    2: {"name_en": "Hinge", "name_fa": "لولایی", "percentage": 10.86},
+    3: {"name_en": "Lunge", "name_fa": "لانچ", "percentage": 8.59},
+    4: {"name_en": "Push – Horizontal", "name_fa": "فشار – افقی", "percentage": 7.40},
+    5: {"name_en": "Push – Vertical", "name_fa": "فشار – عمودی", "percentage": 6.00},
+    6: {"name_en": "Pull – Horizontal", "name_fa": "کشش – افقی", "percentage": 7.06},
+    7: {"name_en": "Pull – Vertical", "name_fa": "کشش – عمودی", "percentage": 4.93},
+    8: {"name_en": "Carry", "name_fa": "حمل", "percentage": 0.67},
+    9: {"name_en": "Rotation", "name_fa": "چرخش", "percentage": 4.33},
+    10: {"name_en": "Anti-Rotation", "name_fa": "ضد چرخش", "percentage": 6.80},
+    11: {"name_en": "None", "name_fa": "ندارد", "percentage": 34.64}
+}
+
 # ─────────────────────────────────────────────
 # SQL-BASED EXERCISE SEARCH ENGINE
 # ─────────────────────────────────────────────
@@ -179,6 +196,7 @@ class SQLExerciseSearchEngine:
                         muscle_groups: Optional[List[str]] = None,
                         muscle_regions: Optional[List[str]] = None,
                         equipment: Optional[List[str]] = None,
+                        movement_patterns: Optional[List[str]] = None,
                         style: Optional[List[str]] = None,
                         limit: int = 50) -> List[Dict]:
         """
@@ -211,6 +229,14 @@ class SQLExerciseSearchEngine:
         - Most common: Bodyweight (29.6%), Dumbbells (16%), Barbell (10.3%)
         - USER-PROVIDED: Based on available equipment
         
+        MOVEMENT_PATTERN TABLE (movement_pattern):
+        - Fundamental movement patterns for exercise categorization
+        - Options: Squat, Hinge, Lunge, Push (Horizontal/Vertical), Pull (Horizontal/Vertical),
+          Carry, Rotation, Anti-Rotation, None
+        - Distribution: None (34.64%), Hinge (10.86%), Squat (8.73%), Lunge (8.59%)
+        - AI-FILTERABLE: AI can filter by movement patterns for balanced programming
+        - Use cases: Ensure variety, target specific movement competencies, sport-specific training
+        
         STYLE TABLE (style) - LIMITED ACCESS:
         - AI can ONLY filter by these 4 allowed styles:
           * Recovery (176 exercises) - for rest day activities
@@ -239,6 +265,12 @@ class SQLExerciseSearchEngine:
             
             equipment (List[str], optional): Available equipment - USER-PROVIDED
                 Options: See AVAILABLE_EQUIPMENT list above (first 17 equipment types)
+            
+            movement_patterns (List[str], optional): Movement patterns - AI-FILTERABLE
+                Options: "Squat", "Hinge", "Lunge", "Push – Horizontal", "Push – Vertical",
+                        "Pull – Horizontal", "Pull – Vertical", "Carry", "Rotation", 
+                        "Anti-Rotation", "None"
+                Use for: Balanced programming, movement variety, functional training
             
             style (List[str], optional): Exercise style - AI-FILTERABLE (LIMITED)
                 Options: "Recovery", "Yoga", "Stretches", "Cardio" ONLY
@@ -834,6 +866,22 @@ When selecting exercises, consider targeting specific muscle regions:
 - Chest: Include both upper (clavicular) and mid/lower (sternal) exercises
 - Quads: Mix inner/outer vastus and rectus femoris movements
 - Core: Target upper abs, lower abs, and obliques separately
+
+MOVEMENT PATTERNS:
+Use movement patterns to create balanced, functional programs:
+- Squat (8.73%): Bilateral lower body, knee-dominant movements
+- Hinge (10.86%): Hip-dominant movements (deadlifts, good mornings)
+- Lunge (8.59%): Unilateral lower body movements
+- Push – Horizontal (7.40%): Horizontal pressing (bench press, push-ups)
+- Push – Vertical (6.00%): Vertical pressing (overhead press)
+- Pull – Horizontal (7.06%): Horizontal pulling (rows)
+- Pull – Vertical (4.93%): Vertical pulling (pull-ups, lat pulldowns)
+- Carry (0.67%): Loaded carries for core stability
+- Rotation (4.33%): Rotational movements for power
+- Anti-Rotation (6.80%): Core stability against rotation
+- None (34.64%): Exercises without specific movement pattern
+
+Balance your workout selection across movement patterns for comprehensive training.
 
 ALLOWED EXERCISE STYLES (LIMITED):
 You can ONLY use these 4 exercise styles for filtering:
