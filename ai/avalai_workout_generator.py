@@ -33,7 +33,10 @@ DB_CONFIG = {
 }
 
 # Gemini model configuration
-GEMINI_MODEL = "gemini-2.5-pro"
+# GEMINI_MODEL = "gemini-2.5-pro"
+GEMINI_MODEL = "gemini-3-flash-preview"
+# GEMINI_MODEL = "gemini-2.5-flash-lite"
+# GEMINI_MODEL = "gemini-2.5-flash"
 
 # Available equipment (first 17 from database)
 AVAILABLE_EQUIPMENT = [

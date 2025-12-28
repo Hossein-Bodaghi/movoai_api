@@ -21,7 +21,10 @@ if not AVALAI_API_KEY:
     raise ValueError("x-goog-api-key not found in .env file")
 
 # Gemini model configuration
-GEMINI_MODEL = "gemini-2.5-pro"
+# GEMINI_MODEL = "gemini-2.5-pro"
+GEMINI_MODEL = "gemini-3-flash-preview"
+# GEMINI_MODEL = "gemini-2.5-flash-lite"
+# GEMINI_MODEL = "gemini-2.5-flash"
 
 
 # ─────────────────────────────────────────────
@@ -162,7 +165,6 @@ class FarsiWorkoutStrategist:
 
 قوانین فرمت متن:
 - از متن ساده فارسی استفاده کنید
-- هیچ علامت markdown استفاده نکنید (بدون *, **, ___, ##)
 - برای جدا کردن بخش‌ها از خط جدید استفاده کنید
 - برای لیست‌ها از - در ابتدای خط استفاده کنید
 - متن باید خواناتر و ساده باشد
