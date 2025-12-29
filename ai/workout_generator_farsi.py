@@ -384,9 +384,59 @@ class FarsiWorkoutPlanGenerator:
                                    goal_description: str, equipment_names: List[str]) -> Dict:
         """Use AvalAI Gemini API to structure the workout plan in Farsi"""
         
+        # Extract focus
+        focus = user_profile.get('focus', 'ندارد')
+        
+        # Define focus-specific prompts
+        focus_prompts = {
+            'performance_enhancement': """
+**دستورالعمل ویژه برای تمرکز: بهبود عملکرد ورزشی (Performance Enhancement)**
+- انتخاب تمرینات باید با هدف افزایش توان، سرعت و چابکی باشد.
+- ست‌ها و تکرارها را برای افزایش قدرت (تکرار کمتر، وزن بیشتر) یا استقامت (تکرار بیشتر) تنظیم کنید.
+- برای ورزشکاران: تمرینات انفجاری و پلیومتریک را در صورت وجود در لیست، در اولویت قرار دهید.
+- استراحت بین ست‌ها برای تمرینات قدرتی بیشتر (۲-۳ دقیقه) و برای استقامتی کمتر (۳۰-۶۰ ثانیه) باشد.
+""",
+            'body_recomposition': """
+**دستورالعمل ویژه برای تمرکز: بهبود فرم بدن (Body Recomposition)**
+- هدف: حداکثر کالری سوزی و حفظ عضله.
+- از سیستم‌های تمرینی با شدت بالا استفاده کنید.
+- استراحت بین ست‌ها را کوتاه نگه دارید (۴۵-۶۰ ثانیه) تا ضربان قلب بالا بماند.
+- حجم تمرین (تعداد ست‌ها) را در حد متوسط تا بالا نگه دارید.
+""",
+            'efficiency': """
+**دستورالعمل ویژه برای تمرکز: کارایی و کمبود وقت (Efficiency)**
+- برنامه باید فشرده و بدون اتلاف وقت باشد.
+- از سوپرست‌ها (Supersets) در توضیحات استراتژی یاد کنید و تمرینات را طوری بچینید که جریان سریعی داشته باشند.
+- استراحت‌ها را حداقل نگه دارید.
+- تمرکز بر حرکات اصلی و چندمفصله باشد.
+""",
+            'rebuilding_rehab': """
+**دستورالعمل ویژه برای تمرکز: بازسازی و ریکاوری (Rebuilding/Rehab)**
+- ایمنی در اولویت است. از انتخاب تمرینات پرخطر یا با فشار زیاد بر مفاصل خودداری کنید.
+- تعداد تکرارها را بالاتر (۱۲-۱۵) و وزنه‌ها را سبک‌تر در نظر بگیرید.
+- استراحت بین ست‌ها را کافی در نظر بگیرید تا ریکاوری کامل انجام شود.
+- بر کنترل حرکت و فرم صحیح در توضیحات تاکید کنید.
+"""
+        }
+
+        selected_focus_prompt = ""
+        # Check keys first or map Farsi descriptions
+        if focus in focus_prompts:
+            selected_focus_prompt = focus_prompts[focus]
+        elif 'عملکرد' in focus or 'performance' in focus.lower():
+            selected_focus_prompt = focus_prompts['performance_enhancement']
+        elif 'فرم بدن' in focus or 'چربی' in focus or 'recomposition' in focus.lower():
+            selected_focus_prompt = focus_prompts['body_recomposition']
+        elif 'مشغله' in focus or 'وقت' in focus or 'efficiency' in focus.lower():
+            selected_focus_prompt = focus_prompts['efficiency']
+        elif 'درد' in focus or 'ریکاوری' in focus or 'rehab' in focus.lower() or 'ایمن' in focus:
+            selected_focus_prompt = focus_prompts['rebuilding_rehab']
+
         # Prepare the prompt in Farsi
         system_instructions = f"""
 شما یک مربی تناسب اندام حرفه‌ای هستید که برنامه‌های تمرینی شخصی‌سازی شده به زبان فارسی تولید می‌کنید.
+
+{selected_focus_prompt}
 
 اطلاعات کاربر:
 - سن: {user_profile.get('age', 30)} سال
@@ -401,8 +451,8 @@ class FarsiWorkoutPlanGenerator:
 - محل تمرین: {user_profile.get('training_location', 'home')}
 
 وظیفه شما:
-1. تولید یک استراتژی کلی برنامه تمرینی به زبان فارسی (2-3 پاراگراف)
-2. توضیح انتظارات و نتایج مورد انتظار (2-3 پاراگراف)
+1. تولید یک استراتژی کلی برنامه تمرینی به زبان فارسی (3-5 پاراگراف کوتاه، هر پاراگراف 1-2 جمله)
+2. توضیح انتظارات و نتایج مورد انتظار (3-5 پاراگراف کوتاه، هر پاراگراف 1-2 جمله)
 3. برای هر روز تمرینی، از تمرینات ارائه شده، 4-6 تمرین مناسب انتخاب کنید
 4. برای هر تمرین، ست، تکرار، و استراحت مشخص کنید
 5. برای گرم کردن، از تمرینات warmup استفاده کنید
@@ -414,6 +464,8 @@ class FarsiWorkoutPlanGenerator:
 - برنامه باید متوازن و جامع باشد
 - توجه به محدودیت‌های کاربر داشته باشید
 - از متن ساده فارسی استفاده کنید (بدون علامت markdown مانند *, **, ___)
+- استراتژی و انتظارات را به صورت متن روان و جذاب بنویسید که کاربر را برای ادامه تمرینات برای 12 هفته انگیزه دهد
+- بین پاراگراف‌ها از دو خط جدید (\n\n) استفاده کنید تا خوانایی بهتر شود
 """
 
         # Create user message with exercise data
@@ -457,8 +509,8 @@ class FarsiWorkoutPlanGenerator:
 
 خروجی را به صورت JSON با فرمت زیر ارائه دهید:
 {{
-  "strategy": "استراتژی کلی برنامه تمرینی به زبان فارسی...",
-  "expectations": "انتظارات و نتایج مورد انتظار به زبان فارسی...",
+  "strategy": "پاراگراف اول استراتژی که یک یا دو جمله توضیح دارد.\n\nپاراگراف دوم استراتژی که یک یا دو جمله توضیح دارد.\n\nپاراگراف سوم استراتژی که یک یا دو جمله توضیح دارد.",
+  "expectations": "پاراگراف اول انتظارات که یک یا دو جمله توضیح دارد.\n\nپاراگراف دوم انتظارات که یک یا دو جمله توضیح دارد.\n\nپاراگراف سوم انتظارات که یک یا دو جمله توضیح دارد.",
   "days": [
     {{
       "day_name": "شنبه",
@@ -481,6 +533,8 @@ class FarsiWorkoutPlanGenerator:
 نکات مهم:
 - exercise_id باید همان شناسه تمرینی باشد که در لیست تمرینات موجود ارائه شده است
 - exercise_order نشان‌دهنده ترتیب اجرای تمرینات است (1، 2، 3، ...)
+- strategy و expectations باید متن روان با پاراگراف‌های کوتاه باشند (جدا شده با \n\n)
+- هر پاراگراف باید یک یا دو جمله باشد و طبیعی و انگیزه‌بخش باشد
 - حتماً از تمرینات موجود در لیست استفاده کنید
 - تمپو و یادداشت‌های اضافی نیاز نیست
 
@@ -594,6 +648,7 @@ class FarsiWorkoutPlanGenerator:
     def _cleanup_workout_data(self, workout_data: Dict) -> Dict:
         """
         Clean up workout data: remove tempo/notes from exercises and clean markdown.
+        Convert strategy and expectations to arrays if they are strings.
         
         Args:
             workout_data: Workout plan data from AI
@@ -619,9 +674,47 @@ class FarsiWorkoutPlanGenerator:
             
             return text.strip()
         
-        # Clean text fields
+        def split_into_parts(text: str) -> list:
+            """Split text into 3-5 parts based on sentences or natural breaks"""
+            if not text:
+                return []
+            
+            # Try to split by double newlines first
+            parts = [p.strip() for p in text.split('\n\n') if p.strip()]
+            
+            # If we don't have enough parts, try splitting by periods with newlines
+            if len(parts) < 3:
+                parts = [p.strip() for p in text.split('\n') if p.strip() and len(p.strip()) > 10]
+            
+            # If still not enough, try splitting by periods
+            if len(parts) < 3:
+                sentences = [s.strip() + '.' for s in text.split('.') if s.strip()]
+                # Combine into 3-5 meaningful parts
+                if len(sentences) <= 5:
+                    parts = sentences
+                else:
+                    chunk_size = len(sentences) // 4
+                    parts = []
+                    for i in range(0, len(sentences), chunk_size):
+                        chunk = ' '.join(sentences[i:i+chunk_size])
+                        if chunk:
+                            parts.append(chunk)
+            
+            # Limit to 3-5 parts
+            if len(parts) > 5:
+                parts = parts[:5]
+            elif len(parts) < 3 and len(parts) > 0:
+                # If we have 1-2 parts, keep them as is
+                pass
+            
+            # Clean each part
+            return [clean_text(p) for p in parts if p]
+        
+        # Handle strategy: convert to array if string
         if 'strategy' in workout_data:
             workout_data['strategy'] = clean_text(workout_data['strategy'])
+        
+        # Handle expectations: convert to array if string
         if 'expectations' in workout_data:
             workout_data['expectations'] = clean_text(workout_data['expectations'])
         
@@ -672,8 +765,8 @@ class FarsiWorkoutPlanGenerator:
             })
         
         return {
-            'strategy': 'این برنامه تمرینی بر اساس اطلاعات پروفایل شما طراحی شده است. رویکرد این برنامه ترکیبی از تمرینات قدرتی و هوازی است که به صورت پیشرونده شدت پیدا می‌کند.',
-            'expectations': 'با انجام منظم این برنامه، افزایش قدرت، استقامت و تناسب اندام کلی را تجربه خواهید کرد.',
+            'strategy': 'این برنامه تمرینی بر اساس اطلاعات پروفایل شما طراحی شده است. رویکرد این برنامه ترکیبی از تمرینات قدرتی و هوازی است.\n\nشدت تمرینات به صورت تدریجی افزایش پیدا می‌کند تا بدن شما فرصت سازگاری داشته باشد.\n\nتمرکز اصلی بر حرکات پایه و اصولی است که پایه‌ای محکم برای پیشرفت شما ایجاد می‌کند.',
+            'expectations': 'با انجام منظم این برنامه، افزایش قدرت عضلانی را تجربه خواهید کرد. استقامت و تناسب اندام کلی شما بهبود می‌یابد.\n\nنتایج قابل مشاهده پس از 4-6 هفته تمرین منظم حاصل می‌شود.\n\nبا ادامه تمرینات برای 12 هفته، تغییرات چشمگیری در ترکیب بدنی و سطح انرژی خود خواهید دید.',
             'days': days
         }
 
